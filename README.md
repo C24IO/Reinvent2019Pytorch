@@ -28,7 +28,7 @@ Model Interpretability
 
 Reinforecement Learning 
 
-## Lab 5 - Mobile 
+## Lab 5 - Stretch
 
 Mobile
 
