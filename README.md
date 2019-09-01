@@ -12,23 +12,28 @@ Workshops. 2-hour 15-minute hands-on workshops.
 
 Enviroment setup 
 
-Cloud 9 
-SageMaker 
-Simple notebook execute
+* Cloud 9 
+* SageMaker 
+* Simple notebook execute
  
 ## Lab 2 
 
-End to end NLP example
+* End to end NLP example
 
 ## Lab 3 - Stretch
 
-Model Interpretability 
+* Model Interpretability 
 
 ## Lab 4 - Stretch 
 
-Reinforecement Learning 
+* Reinforecement Learning 
 
 ## Lab 5 - Stretch
 
-Mobile
+* Mobile
+
+## Scratch 
+
+* References
+* Source Material
 
