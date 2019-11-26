@@ -59,7 +59,10 @@ gradients method to interpret those predictions.
 
 ## Extras
 
-We have and will continue to add a few extras to this set of labs. *bonus* is a directory that contains some helper scripts. *impatient* contains the solved labs with outputs.
+We have and will continue to add a few extras to this set of labs. *bonus* is a directory that contains some helper scripts. 
+We have also included an alternative way to solve the toxic comments 
+classification challenge using the [The fastai deep learning library](https://github.com/fastai/fastai).
+Also - the folder *impatient* contains the solved labs with outputs.
 
 
 ## References & Source Material
@@ -75,6 +78,8 @@ We have and will continue to add a few extras to this set of labs. *bonus* is a 
 * [Captum - Interpreting text models: IMDB sentiment analysis](https://captum.ai/tutorials/IMDB_TorchText_Interpret)
 * [Ben Trevett's - PyTorch Sentiment Analysis](https://github.com/bentrevett/pytorch-sentiment-analysis)
 * [Large Movie Review Dataset](https://ai.stanford.edu/~amaas/data/sentiment/)
- 
+* [Nikita Sharma's Python notebook using data from Toxic Comment Classification Challenge](https://www.kaggle.com/nikkisharma536/fastai-toxic)
+* [Nikita Sharma's blog - Deep Learning on multi-label text classification with FastAi](https://medium.com/@nikkisharma536/deep-learning-on-multi-label-text-classification-with-fastai-d5495d66ed88)
+* []() 
 
 
