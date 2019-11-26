@@ -75,10 +75,6 @@ We have and will continue to add a few extras to this set of labs. *bonus* is a 
 * [Captum - Interpreting text models: IMDB sentiment analysis](https://captum.ai/tutorials/IMDB_TorchText_Interpret)
 * [Ben Trevett's - PyTorch Sentiment Analysis](https://github.com/bentrevett/pytorch-sentiment-analysis)
 * [Large Movie Review Dataset](https://ai.stanford.edu/~amaas/data/sentiment/)
-
-
-
-Malik, Mohit <mmalikg@amazon.com> skrinak lalsaado sanyalps@amazon.com  leepetf  corbarre  rodzanto
  
 
 
