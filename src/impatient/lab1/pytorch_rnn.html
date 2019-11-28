@@ -13084,16 +13084,20 @@ div#notebook {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+<p><a href="https://github.com/awslabs/amazon-sagemaker-examples/tree/master/sagemaker-python-sdk/pytorch_lstm_word_language_model">Reference Source: PyTorch Example from SageMaker</a></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Contents">Contents<a class="anchor-link" href="#Contents">&#182;</a></h2><ol>
-<li><a href="#Background">Background</a></li>
 <li><a href="#Setup">Setup</a></li>
 <li><a href="#Data">Data</a></li>
 <li><a href="#Train">Train</a></li>
 <li><a href="#Host">Host</a></li>
 </ol>
-<hr>
-<h2 id="Background">Background<a class="anchor-link" href="#Background">&#182;</a></h2><p>This example trains a multi-layer LSTM RNN model on a language modeling task based on <a href="https://github.com/pytorch/examples/tree/master/word_language_model">PyTorch example</a>. By default, the training script uses the Wikitext-2 dataset. We will train a model on SageMaker, deploy it, and then use deployed model to generate new text.</p>
-<p>For more information about the PyTorch in SageMaker, please visit <a href="https://github.com/aws/sagemaker-pytorch-containers">sagemaker-pytorch-containers</a> and <a href="https://github.com/aws/sagemaker-python-sdk">sagemaker-python-sdk</a> github repositories.</p>
 <hr>
 <h2 id="Setup">Setup<a class="anchor-link" href="#Setup">&#182;</a></h2><p><em>This notebook was created and tested on an ml.p2.xlarge notebook instance.</em></p>
 <p>Let's start by creating a SageMaker session and specifying:</p>
@@ -13114,13 +13118,54 @@ div#notebook {
 
 <span class="n">sagemaker_session</span> <span class="o">=</span> <span class="n">sagemaker</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
 
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">A session stores configuration state and allows you to create service clients and resources.</span>
+<span class="sd">sagemaker.session.Session - AWS service calls are delegated to an underlying Boto3 session, </span>
+<span class="sd">which by default is initialized using the AWS configuration chain. </span>
+<span class="sd">When you make an Amazon SageMaker API call that accesses an S3 bucket location and one is not specified, </span>
+<span class="sd">the Session creates a default bucket based on a naming convention which includes the current AWS account ID.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
 <span class="n">bucket</span> <span class="o">=</span> <span class="n">sagemaker_session</span><span class="o">.</span><span class="n">default_bucket</span><span class="p">()</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Form of the name of the bucket - sagemaker-{region}-{AWS account ID} Return the name of the default bucket to use in relevant Amazon SageMaker interactions.</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+
 <span class="n">prefix</span> <span class="o">=</span> <span class="s1">&#39;sagemaker/DEMO-pytorch-rnn-lstm&#39;</span>
 
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Used later</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
 <span class="n">role</span> <span class="o">=</span> <span class="n">sagemaker</span><span class="o">.</span><span class="n">get_execution_role</span><span class="p">()</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Get the execution role for the notebook instance. This is the IAM role that you created when you created your notebook instance. You pass the role to the tuning job.</span>
+<span class="sd">&#39;&#39;&#39;</span>
 </pre></div>
 
     </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[1]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>&#39;\nGet the execution role for the notebook instance. This is the IAM role that you created when you created your notebook instance. You pass the role to the tuning job.\n&#39;</pre>
+</div>
+
+</div>
+
 </div>
 </div>
 
@@ -13129,6 +13174,20 @@ div#notebook {
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Data">Data<a class="anchor-link" href="#Data">&#182;</a></h2><h3 id="Getting-the-data">Getting the data<a class="anchor-link" href="#Getting-the-data">&#182;</a></h3><p>As mentioned above we are going to use <a href="https://www.salesforce.com/products/einstein/ai-research/the-wikitext-dependency-language-modeling-dataset/">the wikitext-2 raw data</a>. This data is from Wikipedia and is licensed CC-BY-SA-3.0. Before you use this data for any other purpose than this example, you should understand the data license, described at <a href="https://creativecommons.org/licenses/by-sa/3.0/">https://creativecommons.org/licenses/by-sa/3.0/</a></p>
+<p>This dataset is provided by SalesForce, The WikiText language modeling dataset is a collection of over 100 million tokens extracted from the set of verified Good and Featured articles on Wikipedia. What we have here is a good example of how English language flows.</p>
+<h3 id="Examples">Examples<a class="anchor-link" href="#Examples">&#182;</a></h3><p>= Gold dollar =</p>
+<p>The gold dollar or gold one @-@ dollar piece was a coin struck as a regular issue by the United States Bureau of the Mint from 1849 to 1889 . The coin had three types over its lifetime , all designed by Mint Chief Engraver James B. Longacre . The Type 1 issue had the smallest diameter of any United States coin ever minted .
+ A gold dollar had been proposed several times in the 1830s and 1840s , but was not initially adopted . Congress was finally galvanized into action by the increased supply of bullion caused by the California gold rush , and in 1849 authorized a gold dollar . In its early years , silver coins were being hoarded or exported , and the gold dollar found a ready place in commerce . Silver again circulated after Congress in 1853 required that new coins of that metal be made lighter , and the gold dollar became a rarity in commerce even before federal coins vanished from circulation because of the economic disruption caused by the American Civil War .</p>
+<p>= Super Mario Land =</p>
+<p>Super Mario Land is a 1989 side @-@ scrolling platform video game , the first in the Super Mario Land series , developed and published by Nintendo as a launch title for their Game Boy handheld game console . In gameplay similar to that of the 1985 Super Mario Bros. , but resized for the smaller device 's screen , the player advances Mario to the end of 12 levels by moving to the right and jumping across platforms to avoid enemies and pitfalls . Unlike other Mario games , Super Mario Land is set in Sarasaland , a new environment depicted in line art , and Mario pursues Princess Daisy . The game introduces two Gradius @-@ style shooter levels .
+ At Nintendo CEO Hiroshi Yamauchi 's request , Game Boy creator Gunpei Yokoi 's Nintendo R &amp; D1 developed a Mario game to sell the new console . It was the first portable version of Mario and the first to be made without Mario creator and Yokoi protégé Shigeru Miyamoto . Accordingly , the development team shrunk Mario gameplay elements for the device and used some elements inconsistently from the series . Super Mario Land was expected to showcase the console until Nintendo of America bundled Tetris with new Game Boys . The game launched alongside the Game Boy first in Japan ( April 1989 ) and later worldwide . Super Mario Land was later rereleased for the Nintendo 3DS via Virtual Console in 2011 again as a launch title , which featured some tweaks to the game 's presentation .
+ Initial reviews were laudatory . Reviewers were satisfied with the smaller Super Mario Bros. , but noted its short length . They considered it among the best of the Game Boy launch titles . The handheld console became an immediate success and Super Mario Land ultimately sold over 18 million copies , more than that of Super Mario Bros. 3 . Both contemporaneous and retrospective reviewers praised the game 's soundtrack . Later reviews were critical of the compromises made in development and noted Super Mario Land 's deviance from series norms . The game begot a series of sequels , including the 1992 Super Mario Land 2 : 6 Golden Coins , 1994 Wario Land : Super Mario Land 3 , and 2011 Super Mario 3D Land , though many of the original 's mechanics were not revisited . The game was included in several top Game Boy game lists and debuted Princess Daisy as a recurring Mario series character .</p>
+<p>= = = Sinclair Scientific Programmable = = =</p>
+<p>The Sinclair Scientific Programmable was introduced in 1975 , with the same case as the Sinclair Oxford . It was larger than the Scientific , at 73 by 155 by 34 millimetres ( 2 @.@ 9 in × 6 @.@ 1 in × 1 @.@ 3 in ) , and used a larger  battery , but could also be powered by mains electricity .
+ It had 24 @-@ step programming abilities , which meant it was highly limited for many purposes . It also lacked functions for the natural logarithm and exponential function . Constants used in programs were required to be integers , and the programming was wasteful , with start and end quotes needed to use a constant in a program .
+ However , included with the calculator was a library of over 120 programs that that performed common operations in mathematics , geometry , statistics , finance , physics , electronics , engineering , as well as fluid mechanics and materials science . The full library of standard programs contained over 400 programs in the Sinclair Program Library .</p>
+<h3 id="Dataset-statistics">Dataset statistics<a class="anchor-link" href="#Dataset-statistics">&#182;</a></h3><p>In comparison to the Mikolov processed version of the Penn Treebank (PTB), the WikiText datasets are larger. WikiText-2 aims to be of a similar size to the PTB while WikiText-103 contains all articles extracted from Wikipedia. The WikiText datasets also retain numbers (as opposed to replacing them with N), case (as opposed to all text being lowercased), and punctuation (as opposed to stripping them out).</p>
+<p><img src="../img/dataset-statistics.png" alt="Dataset statistics"></p>
 
 </div>
 </div>
@@ -13143,6 +13202,7 @@ wget http://research.metamind.io.s3.amazonaws.com/wikitext/wikitext-2-raw-v1.zip
 unzip -n wikitext-2-raw-v1.zip
 <span class="nb">cd</span> wikitext-2-raw
 mv wiki.test.raw <span class="nb">test</span> <span class="o">&amp;&amp;</span> mv wiki.train.raw train <span class="o">&amp;&amp;</span> mv wiki.valid.raw valid
+<span class="c1"># Moving the pre-divided datasets into Test, Train and Validation directories.</span>
 </pre></div>
 
     </div>
@@ -13160,7 +13220,6 @@ mv wiki.test.raw <span class="nb">test</span> <span class="o">&amp;&amp;</span> 
 
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>Archive:  wikitext-2-raw-v1.zip
-   creating: wikitext-2-raw/
   inflating: wikitext-2-raw/wiki.test.raw  
   inflating: wikitext-2-raw/wiki.valid.raw  
   inflating: wikitext-2-raw/wiki.train.raw  
@@ -13174,108 +13233,108 @@ mv wiki.test.raw <span class="nb">test</span> <span class="o">&amp;&amp;</span> 
 
 
 <div class="output_subarea output_stream output_stderr output_text">
-<pre>--2019-11-18 05:22:56--  http://research.metamind.io.s3.amazonaws.com/wikitext/wikitext-2-raw-v1.zip
-Resolving research.metamind.io.s3.amazonaws.com (research.metamind.io.s3.amazonaws.com)... 52.216.243.124
-Connecting to research.metamind.io.s3.amazonaws.com (research.metamind.io.s3.amazonaws.com)|52.216.243.124|:80... connected.
+<pre>--2019-11-28 17:40:55--  http://research.metamind.io.s3.amazonaws.com/wikitext/wikitext-2-raw-v1.zip
+Resolving research.metamind.io.s3.amazonaws.com (research.metamind.io.s3.amazonaws.com)... 52.216.186.43
+Connecting to research.metamind.io.s3.amazonaws.com (research.metamind.io.s3.amazonaws.com)|52.216.186.43|:80... connected.
 HTTP request sent, awaiting response... 200 OK
 Length: 4721645 (4.5M) [application/zip]
 Saving to: ‘wikitext-2-raw-v1.zip’
 
-     0K .......... .......... .......... .......... ..........  1%  320K 14s
-    50K .......... .......... .......... .......... ..........  2% 2.21M 8s
-   100K .......... .......... .......... .......... ..........  3%  878K 7s
-   150K .......... .......... .......... .......... ..........  4%  314M 5s
-   200K .......... .......... .......... .......... ..........  5%  643K 5s
-   250K .......... .......... .......... .......... ..........  6% 88.1M 5s
-   300K .......... .......... .......... .......... ..........  7% 81.2M 4s
-   350K .......... .......... .......... .......... ..........  8%  197M 3s
-   400K .......... .......... .......... .......... ..........  9% 2.32M 3s
-   450K .......... .......... .......... .......... .......... 10%  895K 3s
-   500K .......... .......... .......... .......... .......... 11%  104M 3s
-   550K .......... .......... .......... .......... .......... 13%  130M 3s
-   600K .......... .......... .......... .......... .......... 14% 97.2M 2s
-   650K .......... .......... .......... .......... .......... 15%  127M 2s
-   700K .......... .......... .......... .......... .......... 16%  170M 2s
-   750K .......... .......... .......... .......... .......... 17%  148M 2s
-   800K .......... .......... .......... .......... .......... 18%  179M 2s
-   850K .......... .......... .......... .......... .......... 19% 2.54M 2s
-   900K .......... .......... .......... .......... .......... 20%  893K 2s
-   950K .......... .......... .......... .......... .......... 21%  108M 2s
-  1000K .......... .......... .......... .......... .......... 22% 92.7M 2s
-  1050K .......... .......... .......... .......... .......... 23%  130M 2s
-  1100K .......... .......... .......... .......... .......... 24%  121M 1s
-  1150K .......... .......... .......... .......... .......... 26%  144M 1s
-  1200K .......... .......... .......... .......... .......... 27%  101M 1s
-  1250K .......... .......... .......... .......... .......... 28%  140M 1s
-  1300K .......... .......... .......... .......... .......... 29%  111M 1s
-  1350K .......... .......... .......... .......... .......... 30%  270M 1s
-  1400K .......... .......... .......... .......... .......... 31%  137M 1s
-  1450K .......... .......... .......... .......... .......... 32%  150M 1s
-  1500K .......... .......... .......... .......... .......... 33%  142M 1s
-  1550K .......... .......... .......... .......... .......... 34%  388M 1s
-  1600K .......... .......... .......... .......... .......... 35%  338M 1s
-  1650K .......... .......... .......... .......... .......... 36%  390M 1s
-  1700K .......... .......... .......... .......... .......... 37%  345M 1s
-  1750K .......... .......... .......... .......... .......... 39% 2.58M 1s
-  1800K .......... .......... .......... .......... .......... 40%  323M 1s
-  1850K .......... .......... .......... .......... .......... 41%  926K 1s
-  1900K .......... .......... .......... .......... .......... 42% 96.6M 1s
-  1950K .......... .......... .......... .......... .......... 43%  105M 1s
-  2000K .......... .......... .......... .......... .......... 44%  104M 1s
-  2050K .......... .......... .......... .......... .......... 45%  151M 1s
-  2100K .......... .......... .......... .......... .......... 46%  177M 1s
-  2150K .......... .......... .......... .......... .......... 47%  117M 1s
-  2200K .......... .......... .......... .......... .......... 48%  109M 1s
-  2250K .......... .......... .......... .......... .......... 49%  116M 1s
-  2300K .......... .......... .......... .......... .......... 50%  116M 1s
-  2350K .......... .......... .......... .......... .......... 52%  125M 1s
-  2400K .......... .......... .......... .......... .......... 53% 98.3M 0s
-  2450K .......... .......... .......... .......... .......... 54%  121M 0s
-  2500K .......... .......... .......... .......... .......... 55%  120M 0s
-  2550K .......... .......... .......... .......... .......... 56%  217M 0s
-  2600K .......... .......... .......... .......... .......... 57%  331M 0s
-  2650K .......... .......... .......... .......... .......... 58%  381M 0s
-  2700K .......... .......... .......... .......... .......... 59%  373M 0s
-  2750K .......... .......... .......... .......... .......... 60%  372M 0s
-  2800K .......... .......... .......... .......... .......... 61%  284M 0s
-  2850K .......... .......... .......... .......... .......... 62%  367M 0s
-  2900K .......... .......... .......... .......... .......... 63%  368M 0s
-  2950K .......... .......... .......... .......... .......... 65%  355M 0s
-  3000K .......... .......... .......... .......... .......... 66%  327M 0s
-  3050K .......... .......... .......... .......... .......... 67%  367M 0s
-  3100K .......... .......... .......... .......... .......... 68%  364M 0s
-  3150K .......... .......... .......... .......... .......... 69%  379M 0s
-  3200K .......... .......... .......... .......... .......... 70%  326M 0s
-  3250K .......... .......... .......... .......... .......... 71%  373M 0s
-  3300K .......... .......... .......... .......... .......... 72% 3.24M 0s
-  3350K .......... .......... .......... .......... .......... 73%  905K 0s
-  3400K .......... .......... .......... .......... .......... 74% 98.6M 0s
-  3450K .......... .......... .......... .......... .......... 75%  147M 0s
-  3500K .......... .......... .......... .......... .......... 76%  170M 0s
-  3550K .......... .......... .......... .......... .......... 78%  147M 0s
-  3600K .......... .......... .......... .......... .......... 79%  128M 0s
-  3650K .......... .......... .......... .......... .......... 80% 90.5M 0s
-  3700K .......... .......... .......... .......... .......... 81%  132M 0s
-  3750K .......... .......... .......... .......... .......... 82%  208M 0s
-  3800K .......... .......... .......... .......... .......... 83%  119M 0s
-  3850K .......... .......... .......... .......... .......... 84%  142M 0s
-  3900K .......... .......... .......... .......... .......... 85%  139M 0s
-  3950K .......... .......... .......... .......... .......... 86%  102M 0s
-  4000K .......... .......... .......... .......... .......... 87%  199M 0s
-  4050K .......... .......... .......... .......... .......... 88%  140M 0s
-  4100K .......... .......... .......... .......... .......... 90%  148M 0s
-  4150K .......... .......... .......... .......... .......... 91%  163M 0s
-  4200K .......... .......... .......... .......... .......... 92%  120M 0s
-  4250K .......... .......... .......... .......... .......... 93%  103M 0s
-  4300K .......... .......... .......... .......... .......... 94%  115M 0s
-  4350K .......... .......... .......... .......... .......... 95%  383M 0s
-  4400K .......... .......... .......... .......... .......... 96%  136M 0s
-  4450K .......... .......... .......... .......... .......... 97%  254M 0s
-  4500K .......... .......... .......... .......... .......... 98%  317M 0s
-  4550K .......... .......... .......... .......... .......... 99%  378M 0s
-  4600K ..........                                            100%  394M=0.6s
+     0K .......... .......... .......... .......... ..........  1%  326K 14s
+    50K .......... .......... .......... .......... ..........  2% 1.67M 8s
+   100K .......... .......... .......... .......... ..........  3% 1.02M 7s
+   150K .......... .......... .......... .......... ..........  4%  122M 5s
+   200K .......... .......... .......... .......... ..........  5%  658K 5s
+   250K .......... .......... .......... .......... ..........  6% 81.1M 4s
+   300K .......... .......... .......... .......... ..........  7% 93.3M 4s
+   350K .......... .......... .......... .......... ..........  8% 87.8M 3s
+   400K .......... .......... .......... .......... ..........  9% 1.74M 3s
+   450K .......... .......... .......... .......... .......... 10% 1.04M 3s
+   500K .......... .......... .......... .......... .......... 11%  100M 3s
+   550K .......... .......... .......... .......... .......... 13% 84.3M 3s
+   600K .......... .......... .......... .......... .......... 14%  103M 2s
+   650K .......... .......... .......... .......... .......... 15%  119M 2s
+   700K .......... .......... .......... .......... .......... 16% 85.5M 2s
+   750K .......... .......... .......... .......... .......... 17%  108M 2s
+   800K .......... .......... .......... .......... .......... 18%  262M 2s
+   850K .......... .......... .......... .......... .......... 19% 1.86M 2s
+   900K .......... .......... .......... .......... .......... 20% 1.05M 2s
+   950K .......... .......... .......... .......... .......... 21%  110M 2s
+  1000K .......... .......... .......... .......... .......... 22%  111M 2s
+  1050K .......... .......... .......... .......... .......... 23%  102M 1s
+  1100K .......... .......... .......... .......... .......... 24%  125M 1s
+  1150K .......... .......... .......... .......... .......... 26% 84.6M 1s
+  1200K .......... .......... .......... .......... .......... 27% 78.7M 1s
+  1250K .......... .......... .......... .......... .......... 28%  141M 1s
+  1300K .......... .......... .......... .......... .......... 29%  105M 1s
+  1350K .......... .......... .......... .......... .......... 30%  124M 1s
+  1400K .......... .......... .......... .......... .......... 31%  156M 1s
+  1450K .......... .......... .......... .......... .......... 32%  138M 1s
+  1500K .......... .......... .......... .......... .......... 33%  239M 1s
+  1550K .......... .......... .......... .......... .......... 34%  178M 1s
+  1600K .......... .......... .......... .......... .......... 35% 72.5M 1s
+  1650K .......... .......... .......... .......... .......... 36%  273M 1s
+  1700K .......... .......... .......... .......... .......... 37%  296M 1s
+  1750K .......... .......... .......... .......... .......... 39% 2.05M 1s
+  1800K .......... .......... .......... .......... .......... 40%  195M 1s
+  1850K .......... .......... .......... .......... .......... 41% 1.06M 1s
+  1900K .......... .......... .......... .......... .......... 42% 63.2M 1s
+  1950K .......... .......... .......... .......... .......... 43% 70.7M 1s
+  2000K .......... .......... .......... .......... .......... 44% 47.8M 1s
+  2050K .......... .......... .......... .......... .......... 45% 47.8M 1s
+  2100K .......... .......... .......... .......... .......... 46% 45.2M 1s
+  2150K .......... .......... .......... .......... .......... 47% 98.7M 1s
+  2200K .......... .......... .......... .......... .......... 48% 84.7M 1s
+  2250K .......... .......... .......... .......... .......... 49%  142M 1s
+  2300K .......... .......... .......... .......... .......... 50%  203M 1s
+  2350K .......... .......... .......... .......... .......... 52%  258M 0s
+  2400K .......... .......... .......... .......... .......... 53%  235M 0s
+  2450K .......... .......... .......... .......... .......... 54%  235M 0s
+  2500K .......... .......... .......... .......... .......... 55%  207M 0s
+  2550K .......... .......... .......... .......... .......... 56%  242M 0s
+  2600K .......... .......... .......... .......... .......... 57%  255M 0s
+  2650K .......... .......... .......... .......... .......... 58%  242M 0s
+  2700K .......... .......... .......... .......... .......... 59%  206M 0s
+  2750K .......... .......... .......... .......... .......... 60%  241M 0s
+  2800K .......... .......... .......... .......... .......... 61%  236M 0s
+  2850K .......... .......... .......... .......... .......... 62%  228M 0s
+  2900K .......... .......... .......... .......... .......... 63%  215M 0s
+  2950K .......... .......... .......... .......... .......... 65%  253M 0s
+  3000K .......... .......... .......... .......... .......... 66%  230M 0s
+  3050K .......... .......... .......... .......... .......... 67%  237M 0s
+  3100K .......... .......... .......... .......... .......... 68%  186M 0s
+  3150K .......... .......... .......... .......... .......... 69%  249M 0s
+  3200K .......... .......... .......... .......... .......... 70%  233M 0s
+  3250K .......... .......... .......... .......... .......... 71%  229M 0s
+  3300K .......... .......... .......... .......... .......... 72% 2.46M 0s
+  3350K .......... .......... .......... .......... .......... 73%  204M 0s
+  3400K .......... .......... .......... .......... .......... 74% 1.05M 0s
+  3450K .......... .......... .......... .......... .......... 75% 49.6M 0s
+  3500K .......... .......... .......... .......... .......... 76% 67.2M 0s
+  3550K .......... .......... .......... .......... .......... 78% 46.4M 0s
+  3600K .......... .......... .......... .......... .......... 79% 57.4M 0s
+  3650K .......... .......... .......... .......... .......... 80% 61.2M 0s
+  3700K .......... .......... .......... .......... .......... 81%  232M 0s
+  3750K .......... .......... .......... .......... .......... 82%  118M 0s
+  3800K .......... .......... .......... .......... .......... 83%  246M 0s
+  3850K .......... .......... .......... .......... .......... 84%  274M 0s
+  3900K .......... .......... .......... .......... .......... 85%  225M 0s
+  3950K .......... .......... .......... .......... .......... 86%  249M 0s
+  4000K .......... .......... .......... .......... .......... 87%  293M 0s
+  4050K .......... .......... .......... .......... .......... 88%  270M 0s
+  4100K .......... .......... .......... .......... .......... 90%  330M 0s
+  4150K .......... .......... .......... .......... .......... 91%  308M 0s
+  4200K .......... .......... .......... .......... .......... 92%  314M 0s
+  4250K .......... .......... .......... .......... .......... 93%  270M 0s
+  4300K .......... .......... .......... .......... .......... 94%  286M 0s
+  4350K .......... .......... .......... .......... .......... 95%  325M 0s
+  4400K .......... .......... .......... .......... .......... 96%  318M 0s
+  4450K .......... .......... .......... .......... .......... 97%  276M 0s
+  4500K .......... .......... .......... .......... .......... 98%  326M 0s
+  4550K .......... .......... .......... .......... .......... 99%  324M 0s
+  4600K ..........                                            100%  185M=0.6s
 
-2019-11-18 05:22:57 (7.11 MB/s) - ‘wikitext-2-raw-v1.zip’ saved [4721645/4721645]
+2019-11-28 17:40:56 (7.26 MB/s) - ‘wikitext-2-raw-v1.zip’ saved [4721645/4721645]
 
 </pre>
 </div>
@@ -13299,6 +13358,7 @@ Saving to: ‘wikitext-2-raw-v1.zip’
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span>head -5 wikitext-2-raw/train
+<span class="c1">#Lets see how the train dataset looks like</span>
 </pre></div>
 
     </div>
@@ -13342,6 +13402,18 @@ Saving to: ‘wikitext-2-raw-v1.zip’
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">inputs</span> <span class="o">=</span> <span class="n">sagemaker_session</span><span class="o">.</span><span class="n">upload_data</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;wikitext-2-raw&#39;</span><span class="p">,</span> <span class="n">bucket</span><span class="o">=</span><span class="n">bucket</span><span class="p">,</span> <span class="n">key_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">)</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">S3 object key name prefix (default: ‘data’). S3 uses the prefix to create a directory structure for the bucket content that it display in the S3 console.</span>
+
+<span class="sd">Tree of the datasets - </span>
+
+<span class="sd">├── wikitext-2-raw</span>
+<span class="sd">│   ├── test</span>
+<span class="sd">│   ├── train</span>
+<span class="sd">│   └── valid</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;input spec (in this case, just an S3 path): </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">inputs</span><span class="p">))</span>
 </pre></div>
 
@@ -13384,9 +13456,6 @@ the following will be set, following the format <code>SM_CHANNEL_[channel_name]<
 <ul>
 <li><code>SM_CHANNEL_TRAINING</code>: A string representing the path to the directory containing data in the 'training' channel.</li>
 </ul>
-<p>A typical training script loads data from the input channels, configures training with hyperparameters, trains a model, and saves a model to <code>model_dir</code> so that it can be hosted later. Hyperparameters are passed to your script as arguments and can be retrieved with an <code>argparse.ArgumentParser</code> instance.</p>
-<p>In this notebook example, we will use Git integration. That is, you can specify a training script that is stored in a GitHub, CodeCommit or other Git repository as the entry point for the estimator, so that you don't have to download the scripts locally. If you do so, source directory and dependencies should be in the same repo if they are needed.</p>
-<p>To use Git integration, pass a dict <code>git_config</code> as a parameter when you create the <code>PyTorch</code> Estimator object. In the <code>git_config</code> parameter, you specify the fields <code>repo</code>, <code>branch</code> and <code>commit</code> to locate the specific repo you want to use. If authentication is required to access the repo, you can specify fields <code>2FA_enabled</code>, <code>username</code>, <code>password</code> and token accordingly.</p>
 <p>The script that we will use in this example is stored in GitHub repo 
 <a href="https://github.com/awslabs/amazon-sagemaker-examples/tree/training-scripts">https://github.com/awslabs/amazon-sagemaker-examples/tree/training-scripts</a>, 
 under the branch <code>training-scripts</code>. It is a public repo so we don't need authentication to access it. Let's specify the <code>git_config</code> argument here:</p>
@@ -13394,23 +13463,9 @@ under the branch <code>training-scripts</code>. It is a public repo so we don't 
 </div>
 </div>
 </div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[5]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#git_config = {&#39;repo&#39;: &#39;https://github.com/awslabs/amazon-sagemaker-examples.git&#39;, &#39;branch&#39;: &#39;training-scripts&#39;}</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Note that we do not specify <code>commit</code> in <code>git_config</code> here, in which case the latest commit of the specified repo and branch will be used by default.</p>
 <p>A typical training script loads data from the input channels, configures training with hyperparameters, trains a model, and saves a model to <code>model_dir</code> so that it can be hosted later. Hyperparameters are passed to your script as arguments and can be retrieved with an <code>argparse.ArgumentParser</code> instance.</p>
 <p>For example, the script run by this notebook: 
 <a href="https://github.com/awslabs/amazon-sagemaker-examples/blob/training-scripts/pytorch-rnn-scripts/train.py">https://github.com/awslabs/amazon-sagemaker-examples/blob/training-scripts/pytorch-rnn-scripts/train.py</a>.</p>
@@ -13424,6 +13479,192 @@ under the branch <code>training-scripts</code>. It is a public repo so we don't 
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>In the current example we also need to provide source directory, because training script imports data and model classes from other modules. The source directory is 
 <a href="https://github.com/awslabs/amazon-sagemaker-examples/blob/training-scripts/pytorch-rnn-scripts/">https://github.com/awslabs/amazon-sagemaker-examples/blob/training-scripts/pytorch-rnn-scripts/</a>. We should provide 'pytorch-rnn-scripts' for <code>source_dir</code> when creating the Estimator object, which is a relative path inside the Git repository.</p>
+<p>Lets see the training script in details - this training script is located here -</p>
+<div class="highlight"><pre><span></span>├── pytorch-rnn-scripts
+│   ├── data.py
+│   ├── generate.py
+│   ├── __init__.py
+│   ├── rnn.py
+│   └── train.py
+</pre></div>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">data</span>
+</pre></div>
+<p>Here we import data.py, data.py has functions for tokenizing and creating a corpus for consumptions. A few relevant details here - <a href="https://github.com/nicolas-ivanov/tf_seq2seq_chatbot/issues/15#issuecomment-246106807">tokens</a></p>
+<p>Then we have hyperparamters being passed to this script, you can see this in the training blob</p>
+<div class="highlight"><pre><span></span><span class="c1"># Hyperparameters sent by the client are passed as command-line arguments to the script.</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--emsize&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;size of word embeddings&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--nhid&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;number of hidden units per layer&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--nlayers&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;number of layers&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--lr&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;initial learning rate&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--clip&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;gradient clipping&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--epochs&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;upper epoch limit&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--batch_size&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;N&#39;</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;batch size&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--bptt&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">35</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;sequence length&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--dropout&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;dropout applied to layers (0 = no dropout)&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--tied&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;tie the word embedding and softmax weights&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--seed&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1111</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;random seed&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--log-interval&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;N&#39;</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s1">&#39;report interval&#39;</span><span class="p">)</span>
+</pre></div>
+<p>Then we have details of file paths -</p>
+<div class="highlight"><pre><span></span><span class="c1"># Data and model checkpoints/otput directories from the container environment</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--model-dir&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;SM_MODEL_DIR&#39;</span><span class="p">])</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--output-data-dir&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;SM_OUTPUT_DATA_DIR&#39;</span><span class="p">])</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--data-dir&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;SM_CHANNEL_TRAINING&#39;</span><span class="p">])</span>
+</pre></div>
+<p>Here are some logs from when a job like this was run -</p>
+<div class="highlight"><pre><span></span><span class="err">SM_TRAINING_ENV=</span>
+<span class="p">{</span>
+    <span class="nt">&quot;additional_framework_parameters&quot;</span><span class="p">:</span> <span class="p">{},</span>
+    <span class="nt">&quot;channel_input_dirs&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;training&quot;</span><span class="p">:</span> <span class="s2">&quot;/opt/ml/input/data/training&quot;</span>
+    <span class="p">},</span>
+    <span class="nt">&quot;current_host&quot;</span><span class="p">:</span> <span class="s2">&quot;algo-1&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;framework_module&quot;</span><span class="p">:</span> <span class="s2">&quot;sagemaker_pytorch_container.training:main&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;hosts&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;algo-1&quot;</span>
+    <span class="p">],</span>
+    <span class="nt">&quot;hyperparameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;epochs&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+        <span class="nt">&quot;tied&quot;</span><span class="p">:</span> <span class="kc">true</span>
+    <span class="p">},</span>
+    <span class="nt">&quot;input_config_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;/opt/ml/input/config&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;input_data_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;training&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;RecordWrapperType&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;S3DistributionType&quot;</span><span class="p">:</span> <span class="s2">&quot;FullyReplicated&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;TrainingInputMode&quot;</span><span class="p">:</span> <span class="s2">&quot;File&quot;</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="nt">&quot;input_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;/opt/ml/input&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;is_master&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+    <span class="nt">&quot;job_name&quot;</span><span class="p">:</span> <span class="s2">&quot;sagemaker-pytorch-2019-11-26-19-32-08-962&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;log_level&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="nt">&quot;master_hostname&quot;</span><span class="p">:</span> <span class="s2">&quot;algo-1&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;model_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;/opt/ml/model&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;module_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;s3://sagemaker-us-west-2-111652037296/sagemaker-pytorch-2019-11-26-19-32-08-962/source/sourcedir.tar.gz&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;module_name&quot;</span><span class="p">:</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;network_interface_name&quot;</span><span class="p">:</span> <span class="s2">&quot;eth0&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;num_cpus&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="nt">&quot;num_gpus&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="nt">&quot;output_data_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;/opt/ml/output/data&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;output_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;/opt/ml/output&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;output_intermediate_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;/opt/ml/output/intermediate&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;resource_config&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;current_host&quot;</span><span class="p">:</span> <span class="s2">&quot;algo-1&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;hosts&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">&quot;algo-1&quot;</span>
+        <span class="p">],</span>
+        <span class="nt">&quot;network_interface_name&quot;</span><span class="p">:</span> <span class="s2">&quot;eth0&quot;</span>
+    <span class="p">},</span>
+    <span class="nt">&quot;user_entry_point&quot;</span><span class="p">:</span> <span class="s2">&quot;train.py&quot;</span>
+<span class="p">}</span>
+</pre></div>
+<p>Here are some environment variables -</p>
+<div class="highlight"><pre><span></span><span class="err">SM_USER_ARGS=</span><span class="p">[</span><span class="s2">&quot;--epochs&quot;</span><span class="p">,</span><span class="s2">&quot;6&quot;</span><span class="p">,</span><span class="s2">&quot;--tied&quot;</span><span class="p">,</span><span class="s2">&quot;True&quot;</span><span class="p">]</span>
+<span class="err">SM_OUTPUT_INTERMEDIATE_DIR=/opt/ml/output/intermediate</span>
+<span class="err">SM_CHANNEL_TRAINING=/opt/ml/input/data/training</span>
+<span class="err">SM_HP_TIED=</span><span class="kc">true</span>
+<span class="err">SM_HP_EPOCHS=</span><span class="mi">6</span>
+<span class="err">PYTHONPATH=/usr/local/bin:/usr/lib/python</span><span class="mi">36</span><span class="err">.zip:/usr/lib/python</span><span class="mf">3.6</span><span class="err">:/usr/lib/python</span><span class="mf">3.6</span><span class="err">/lib-dynload:/usr/local/lib/python</span><span class="mf">3.6</span><span class="err">/dist-packages:/usr/lib/python</span><span class="mi">3</span><span class="err">/dist-packages</span>
+<span class="err">Invoking</span> <span class="err">script</span> <span class="err">with</span> <span class="err">the</span> <span class="err">following</span> <span class="err">command:</span>
+<span class="err">/usr/bin/python</span> <span class="err">-m</span> <span class="err">train</span> <span class="err">--epochs</span> <span class="mi">6</span> <span class="err">--tied</span> <span class="err">True</span>
+
+<span class="err">Namespace(batch_size=</span><span class="mi">20</span><span class="err">,</span> <span class="err">bptt=</span><span class="mi">35</span><span class="err">,</span> <span class="err">clip=</span><span class="mf">0.25</span><span class="err">,</span> <span class="err">data_dir=&#39;/opt/ml/input/data/training&#39;,</span> <span class="err">dropout=</span><span class="mf">0.2</span><span class="err">,</span> <span class="err">emsize=</span><span class="mi">200</span><span class="err">,</span> <span class="err">epochs=</span><span class="mi">6</span><span class="err">,</span> <span class="err">log_interval=</span><span class="mi">200</span><span class="err">,</span> <span class="err">lr=</span><span class="mi">20</span><span class="err">,</span> <span class="err">model_dir=&#39;/opt/ml/model&#39;,</span> <span class="err">nhid=</span><span class="mi">200</span><span class="err">,</span> <span class="err">nlayers=</span><span class="mi">2</span><span class="err">,</span> <span class="err">output_data_dir=&#39;/opt/ml/output/data&#39;,</span> <span class="err">seed=</span><span class="mi">1111</span><span class="err">,</span> <span class="err">tied=True)</span>
+</pre></div>
+<p>You can find the logs by going to the training jobs in the Amazon SageMaker Dashboard</p>
+<div class="highlight"><pre><span></span><span class="c1"># Set the random seed manually for reproducibility.</span>
+<span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
+</pre></div>
+<p>This seed you can seed was 1111 in the above example. You can use torch.manual_seed() to seed the RNG for all devices (both CPU and CUDA). Completely reproducible results are not guaranteed across PyTorch releases, individual commits or different platforms. Furthermore, results need not be reproducible between CPU and GPU executions, even when using identical seeds. However, in order to make computations deterministic on your specific problem on one specific platform and PyTorch release, there are a couple of steps to take. This is one of these steps. More details [here(<a href="https://pytorch.org/docs/stable/notes/randomness.html">https://pytorch.org/docs/stable/notes/randomness.html</a>)</p>
+<p>Now we load the corpus created by data.py</p>
+<div class="highlight"><pre><span></span><span class="k">print</span><span class="p">(</span><span class="s1">&#39;Load data&#39;</span><span class="p">)</span>
+<span class="n">corpus</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">Corpus</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">data_dir</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Model-in-Pytorch">Model in Pytorch<a class="anchor-link" href="#Model-in-Pytorch">&#182;</a></h3><p>Now at this stage after a bit more setup - we load the model</p>
+<div class="highlight"><pre><span></span><span class="n">ntokens</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">corpus</span><span class="o">.</span><span class="n">dictionary</span><span class="p">)</span>
+<span class="n">rnn_type</span> <span class="o">=</span> <span class="s1">&#39;LSTM&#39;</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">RNNModel</span><span class="p">(</span><span class="n">rnn_type</span><span class="p">,</span> <span class="n">ntokens</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">emsize</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">nhid</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">nlayers</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">tied</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+</pre></div>
+<p>We have defined the model in - rnn.py</p>
+<p>We are using LSTM which is a variant of RNN</p>
+<p><img src="../img/The_LSTM_cell-600.400.png" alt="The LSTM Cell"></p>
+<p>Soure of image - <a href="https://en.wikipedia.org/wiki/Long_short-term_memory#/media/File:The_LSTM_cell.png">Guillaume Chevalier from Wikipedia</a></p>
+<p>Now you can see how the above architecture is setup, we can understand this better using the following image as a resource.</p>
+<p><img src="../img/nct-seq2seq.png" alt="The LSTM Cell - in series"></p>
+<p>Soure of image - <a href="http://www.wildml.com/2016/04/deep-learning-for-chatbots-part-1-introduction/">Deep Learning for Chatbots, Part 1 – Introduction</a></p>
+<div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">drop</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="n">ntoken</span><span class="p">,</span> <span class="n">ninp</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">rnn</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">nn</span><span class="p">,</span> <span class="s1">&#39;LSTM&#39;</span><span class="p">)(</span><span class="n">ninp</span><span class="p">,</span> <span class="n">nhid</span><span class="p">,</span> <span class="n">nlayers</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">)</span>
+
+<span class="n">nn</span> <span class="o">-</span> <span class="n">Base</span> <span class="k">class</span> <span class="nc">for</span> <span class="nb">all</span> <span class="n">neural</span> <span class="n">network</span> <span class="n">modules</span><span class="o">.</span>
+<span class="n">ninp</span> <span class="o">-</span> <span class="n">size</span> <span class="n">of</span> <span class="n">word</span> <span class="n">embeddings</span> <span class="o">-</span> <span class="n">emsize</span><span class="o">=</span><span class="mi">200</span>
+<span class="n">nhid</span> <span class="o">-</span> <span class="n">number</span> <span class="n">of</span> <span class="n">hidden</span> <span class="n">units</span> <span class="n">per</span> <span class="n">layer</span> <span class="o">-</span> <span class="n">nhid</span><span class="o">=</span><span class="mi">200</span>
+<span class="n">nlayers</span> <span class="o">-</span> <span class="n">number</span> <span class="n">of</span> <span class="n">layers</span> <span class="o">-</span> <span class="n">nlayers</span><span class="o">=</span><span class="mi">2</span>
+<span class="n">dropout</span> <span class="o">-</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.2</span>
+<span class="n">tied</span> <span class="o">-</span> <span class="n">tie</span> <span class="n">the</span> <span class="n">word</span> <span class="n">embedding</span> <span class="ow">and</span> <span class="n">softmax</span> <span class="n">weights</span> <span class="o">-</span> <span class="n">tied</span><span class="o">=</span><span class="bp">True</span>
+</pre></div>
+<p>Then you can see the necessary functions of RNNs - such as - forward pass and initialize hidden weights.</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">init_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">hidden</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">init_hidden</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bsz</span><span class="p">):</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Back-to-the-training-script">Back to the training script<a class="anchor-link" href="#Back-to-the-training-script">&#182;</a></h3><p>We have function to batch up the corpus -</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_batch</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+<span class="n">get_batch</span> <span class="n">subdivides</span> <span class="n">the</span> <span class="n">source</span> <span class="n">data</span> <span class="n">into</span> <span class="n">chunks</span> <span class="n">of</span> <span class="n">length</span> <span class="n">args</span><span class="o">.</span><span class="n">bptt</span><span class="o">.</span>
+</pre></div>
+<p>We have a function for Training, Validation</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">train</span><span class="p">():</span>
+<span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="n">data_source</span><span class="p">):</span>
+</pre></div>
+<p>We have the training loop</p>
+<div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">epochs</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+</pre></div>
+<p>We checkpoint the model -</p>
+<div class="highlight"><pre><span></span><span class="k">print</span><span class="p">(</span><span class="s1">&#39;Saving the best model: {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">best_state</span><span class="p">))</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">f</span><span class="p">)</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">checkpoint_state_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</pre></div>
+<p>&amp;</p>
+<div class="highlight"><pre><span></span><span class="c1"># Load the best saved model.</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+    <span class="c1"># after load the rnn params are not a continuous chunk of memory</span>
+    <span class="c1"># this makes them a continuous chunk, and will speed up forward pass</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">rnn</span><span class="o">.</span><span class="n">flatten_parameters</span><span class="p">()</span>
+</pre></div>
+<p>&amp;</p>
+<p>Save the model -</p>
+<div class="highlight"><pre><span></span><span class="c1"># Move the best model to cpu and resave it</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">f</span><span class="p">)</span>
+</pre></div>
 
 </div>
 </div>
@@ -13432,13 +13673,14 @@ under the branch <code>training-scripts</code>. It is a public repo so we don't 
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="Run-training-in-SageMaker">Run training in SageMaker<a class="anchor-link" href="#Run-training-in-SageMaker">&#182;</a></h3><p>The PyTorch class allows us to run our training function as a training job on SageMaker infrastructure. We need to configure it with our training script and source directory, an IAM role, the number of training instances, and the training instance type. In this case we will run our training job on <code>ml.p2.xlarge</code> instance. As you can see in this example you can also specify hyperparameters.</p>
+<p>Here we are using a prebuilt container for training our script, if you want to create your own please navigate to - <a href="https://github.com/aws/sagemaker-pytorch-container">https://github.com/aws/sagemaker-pytorch-container</a></p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">sagemaker.pytorch</span> <span class="k">import</span> <span class="n">PyTorch</span>
@@ -13472,7 +13714,7 @@ under the branch <code>training-scripts</code>. It is a public repo so we don't 
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[7]:</div>
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">({</span><span class="s1">&#39;training&#39;</span><span class="p">:</span> <span class="n">inputs</span><span class="p">})</span>
@@ -13492,33 +13734,34 @@ under the branch <code>training-scripts</code>. It is a public repo so we don't 
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>2019-11-18 05:22:59 Starting - Starting the training job...
-2019-11-18 05:23:01 Starting - Launching requested ML instances......
-2019-11-18 05:24:29 Starting - Preparing the instances for training.........
-2019-11-18 05:25:33 Downloading - Downloading input data...
-2019-11-18 05:26:21 Training - Downloading the training image..............<span class="ansi-red-fg">bash: cannot set terminal process group (-1): Inappropriate ioctl for device</span>
+<pre>2019-11-28 17:40:58 Starting - Starting the training job...
+2019-11-28 17:40:59 Starting - Launching requested ML instances......
+2019-11-28 17:41:59 Starting - Preparing the instances for training.........
+2019-11-28 17:43:43 Downloading - Downloading input data...
+2019-11-28 17:44:15 Training - Downloading the training image............
+2019-11-28 17:46:25 Training - Training image download completed. Training in progress..<span class="ansi-red-fg">bash: cannot set terminal process group (-1): Inappropriate ioctl for device</span>
 <span class="ansi-red-fg">bash: no job control in this shell</span>
-<span class="ansi-red-fg">2019-11-18 05:28:39,600 sagemaker-containers INFO     Imported framework sagemaker_pytorch_container.training</span>
-<span class="ansi-red-fg">2019-11-18 05:28:39,624 sagemaker_pytorch_container.training INFO     Block until all host DNS lookups succeed.</span>
-<span class="ansi-red-fg">2019-11-18 05:28:40,237 sagemaker_pytorch_container.training INFO     Invoking user training script.</span>
-<span class="ansi-red-fg">2019-11-18 05:28:40,535 sagemaker-containers INFO     Module train does not provide a setup.py. </span>
+<span class="ansi-red-fg">2019-11-28 17:46:26,729 sagemaker-containers INFO     Imported framework sagemaker_pytorch_container.training</span>
+<span class="ansi-red-fg">2019-11-28 17:46:26,754 sagemaker_pytorch_container.training INFO     Block until all host DNS lookups succeed.</span>
+<span class="ansi-red-fg">2019-11-28 17:46:26,755 sagemaker_pytorch_container.training INFO     Invoking user training script.</span>
+<span class="ansi-red-fg">2019-11-28 17:46:27,008 sagemaker-containers INFO     Module train does not provide a setup.py. </span>
 <span class="ansi-red-fg">Generating setup.py</span>
-<span class="ansi-red-fg">2019-11-18 05:28:40,535 sagemaker-containers INFO     Generating setup.cfg</span>
-<span class="ansi-red-fg">2019-11-18 05:28:40,536 sagemaker-containers INFO     Generating MANIFEST.in</span>
-<span class="ansi-red-fg">2019-11-18 05:28:40,536 sagemaker-containers INFO     Installing module with the following command:</span>
+<span class="ansi-red-fg">2019-11-28 17:46:27,009 sagemaker-containers INFO     Generating setup.cfg</span>
+<span class="ansi-red-fg">2019-11-28 17:46:27,009 sagemaker-containers INFO     Generating MANIFEST.in</span>
+<span class="ansi-red-fg">2019-11-28 17:46:27,009 sagemaker-containers INFO     Installing module with the following command:</span>
 <span class="ansi-red-fg">/opt/conda/bin/python -m pip install . </span>
 <span class="ansi-red-fg">Processing /opt/ml/code</span>
 <span class="ansi-red-fg">Building wheels for collected packages: train
   Building wheel for train (setup.py): started
   Building wheel for train (setup.py): finished with status &#39;done&#39;
-  Created wheel for train: filename=train-1.0.0-py2.py3-none-any.whl size=20542 sha256=39304343654587df22df842755ef1ee4e1a6911ba608ca560df5d8efd40421e9
-  Stored in directory: /tmp/pip-ephem-wheel-cache-l__u1ey1/wheels/35/24/16/37574d11bf9bde50616c67372a334f94fa8356bc7164af8ca3</span>
+  Created wheel for train: filename=train-1.0.0-py2.py3-none-any.whl size=23673 sha256=79ec53a71c3db37cb6d6bf9b37ac4aed1cdffc669a45b52484a111788e6ec3b0
+  Stored in directory: /tmp/pip-ephem-wheel-cache-iokozj_8/wheels/35/24/16/37574d11bf9bde50616c67372a334f94fa8356bc7164af8ca3</span>
 <span class="ansi-red-fg">Successfully built train</span>
 <span class="ansi-red-fg">Installing collected packages: train</span>
 <span class="ansi-red-fg">Successfully installed train-1.0.0</span>
 <span class="ansi-red-fg">WARNING: You are using pip version 19.3; however, version 19.3.1 is available.</span>
 <span class="ansi-red-fg">You should consider upgrading via the &#39;pip install --upgrade pip&#39; command.</span>
-<span class="ansi-red-fg">2019-11-18 05:28:42,680 sagemaker-containers INFO     Invoking user script
+<span class="ansi-red-fg">2019-11-28 17:46:29,003 sagemaker-containers INFO     Invoking user script
 </span>
 <span class="ansi-red-fg">Training Env:
 </span>
@@ -13546,11 +13789,11 @@ under the branch <code>training-scripts</code>. It is a public repo so we don't 
     },
     &#34;input_dir&#34;: &#34;/opt/ml/input&#34;,
     &#34;is_master&#34;: true,
-    &#34;job_name&#34;: &#34;pytorch-training-2019-11-18-05-22-58-697&#34;,
+    &#34;job_name&#34;: &#34;pytorch-training-2019-11-28-17-40-57-666&#34;,
     &#34;log_level&#34;: 20,
     &#34;master_hostname&#34;: &#34;algo-1&#34;,
     &#34;model_dir&#34;: &#34;/opt/ml/model&#34;,
-    &#34;module_dir&#34;: &#34;s3://sagemaker-us-west-2-111652037296/pytorch-training-2019-11-18-05-22-58-697/source/sourcedir.tar.gz&#34;,
+    &#34;module_dir&#34;: &#34;s3://sagemaker-us-west-2-111652037296/pytorch-training-2019-11-28-17-40-57-666/source/sourcedir.tar.gz&#34;,
     &#34;module_name&#34;: &#34;train&#34;,
     &#34;network_interface_name&#34;: &#34;eth0&#34;,
     &#34;num_cpus&#34;: 4,
@@ -13589,8 +13832,8 @@ under the branch <code>training-scripts</code>. It is a public repo so we don't 
 <span class="ansi-red-fg">SM_NUM_CPUS=4</span>
 <span class="ansi-red-fg">SM_NUM_GPUS=1</span>
 <span class="ansi-red-fg">SM_MODEL_DIR=/opt/ml/model</span>
-<span class="ansi-red-fg">SM_MODULE_DIR=s3://sagemaker-us-west-2-111652037296/pytorch-training-2019-11-18-05-22-58-697/source/sourcedir.tar.gz</span>
-<span class="ansi-red-fg">SM_TRAINING_ENV={&#34;additional_framework_parameters&#34;:{},&#34;channel_input_dirs&#34;:{&#34;training&#34;:&#34;/opt/ml/input/data/training&#34;},&#34;current_host&#34;:&#34;algo-1&#34;,&#34;framework_module&#34;:&#34;sagemaker_pytorch_container.training:main&#34;,&#34;hosts&#34;:[&#34;algo-1&#34;],&#34;hyperparameters&#34;:{&#34;epochs&#34;:6,&#34;tied&#34;:true},&#34;input_config_dir&#34;:&#34;/opt/ml/input/config&#34;,&#34;input_data_config&#34;:{&#34;training&#34;:{&#34;RecordWrapperType&#34;:&#34;None&#34;,&#34;S3DistributionType&#34;:&#34;FullyReplicated&#34;,&#34;TrainingInputMode&#34;:&#34;File&#34;}},&#34;input_dir&#34;:&#34;/opt/ml/input&#34;,&#34;is_master&#34;:true,&#34;job_name&#34;:&#34;pytorch-training-2019-11-18-05-22-58-697&#34;,&#34;log_level&#34;:20,&#34;master_hostname&#34;:&#34;algo-1&#34;,&#34;model_dir&#34;:&#34;/opt/ml/model&#34;,&#34;module_dir&#34;:&#34;s3://sagemaker-us-west-2-111652037296/pytorch-training-2019-11-18-05-22-58-697/source/sourcedir.tar.gz&#34;,&#34;module_name&#34;:&#34;train&#34;,&#34;network_interface_name&#34;:&#34;eth0&#34;,&#34;num_cpus&#34;:4,&#34;num_gpus&#34;:1,&#34;output_data_dir&#34;:&#34;/opt/ml/output/data&#34;,&#34;output_dir&#34;:&#34;/opt/ml/output&#34;,&#34;output_intermediate_dir&#34;:&#34;/opt/ml/output/intermediate&#34;,&#34;resource_config&#34;:{&#34;current_host&#34;:&#34;algo-1&#34;,&#34;hosts&#34;:[&#34;algo-1&#34;],&#34;network_interface_name&#34;:&#34;eth0&#34;},&#34;user_entry_point&#34;:&#34;train.py&#34;}</span>
+<span class="ansi-red-fg">SM_MODULE_DIR=s3://sagemaker-us-west-2-111652037296/pytorch-training-2019-11-28-17-40-57-666/source/sourcedir.tar.gz</span>
+<span class="ansi-red-fg">SM_TRAINING_ENV={&#34;additional_framework_parameters&#34;:{},&#34;channel_input_dirs&#34;:{&#34;training&#34;:&#34;/opt/ml/input/data/training&#34;},&#34;current_host&#34;:&#34;algo-1&#34;,&#34;framework_module&#34;:&#34;sagemaker_pytorch_container.training:main&#34;,&#34;hosts&#34;:[&#34;algo-1&#34;],&#34;hyperparameters&#34;:{&#34;epochs&#34;:6,&#34;tied&#34;:true},&#34;input_config_dir&#34;:&#34;/opt/ml/input/config&#34;,&#34;input_data_config&#34;:{&#34;training&#34;:{&#34;RecordWrapperType&#34;:&#34;None&#34;,&#34;S3DistributionType&#34;:&#34;FullyReplicated&#34;,&#34;TrainingInputMode&#34;:&#34;File&#34;}},&#34;input_dir&#34;:&#34;/opt/ml/input&#34;,&#34;is_master&#34;:true,&#34;job_name&#34;:&#34;pytorch-training-2019-11-28-17-40-57-666&#34;,&#34;log_level&#34;:20,&#34;master_hostname&#34;:&#34;algo-1&#34;,&#34;model_dir&#34;:&#34;/opt/ml/model&#34;,&#34;module_dir&#34;:&#34;s3://sagemaker-us-west-2-111652037296/pytorch-training-2019-11-28-17-40-57-666/source/sourcedir.tar.gz&#34;,&#34;module_name&#34;:&#34;train&#34;,&#34;network_interface_name&#34;:&#34;eth0&#34;,&#34;num_cpus&#34;:4,&#34;num_gpus&#34;:1,&#34;output_data_dir&#34;:&#34;/opt/ml/output/data&#34;,&#34;output_dir&#34;:&#34;/opt/ml/output&#34;,&#34;output_intermediate_dir&#34;:&#34;/opt/ml/output/intermediate&#34;,&#34;resource_config&#34;:{&#34;current_host&#34;:&#34;algo-1&#34;,&#34;hosts&#34;:[&#34;algo-1&#34;],&#34;network_interface_name&#34;:&#34;eth0&#34;},&#34;user_entry_point&#34;:&#34;train.py&#34;}</span>
 <span class="ansi-red-fg">SM_USER_ARGS=[&#34;--epochs&#34;,&#34;6&#34;,&#34;--tied&#34;,&#34;True&#34;]</span>
 <span class="ansi-red-fg">SM_OUTPUT_INTERMEDIATE_DIR=/opt/ml/output/intermediate</span>
 <span class="ansi-red-fg">SM_CHANNEL_TRAINING=/opt/ml/input/data/training</span>
@@ -13605,129 +13848,180 @@ under the branch <code>training-scripts</code>. It is a public repo so we don't 
 </span>
 <span class="ansi-red-fg">Namespace(batch_size=20, bptt=35, clip=0.25, data_dir=&#39;/opt/ml/input/data/training&#39;, dropout=0.2, emsize=200, epochs=6, log_interval=200, lr=20, model_dir=&#39;/opt/ml/model&#39;, nhid=200, nlayers=2, output_data_dir=&#39;/opt/ml/output/data&#39;, seed=1111, tied=True)</span>
 <span class="ansi-red-fg">Load data</span>
-
-2019-11-18 05:28:38 Training - Training image download completed. Training in progress.<span class="ansi-red-fg">Batchify dataset</span>
+<span class="ansi-red-fg">Batchify dataset</span>
 <span class="ansi-red-fg">Build the model</span>
 <span class="ansi-red-fg">Starting training.</span>
-<span class="ansi-red-fg">| epoch   1 |   200/ 2983 batches | lr 20.00 | ms/batch 101.19 | loss  8.33 | ppl  4136.34</span>
-<span class="ansi-red-fg">| epoch   1 |   400/ 2983 batches | lr 20.00 | ms/batch 101.08 | loss  7.38 | ppl  1606.61</span>
-<span class="ansi-red-fg">| epoch   1 |   600/ 2983 batches | lr 20.00 | ms/batch 105.36 | loss  6.87 | ppl   964.80</span>
-<span class="ansi-red-fg">| epoch   1 |   800/ 2983 batches | lr 20.00 | ms/batch 98.25 | loss  6.68 | ppl   794.86</span>
-<span class="ansi-red-fg">| epoch   1 |  1000/ 2983 batches | lr 20.00 | ms/batch 102.95 | loss  6.45 | ppl   632.29</span>
-<span class="ansi-red-fg">| epoch   1 |  1200/ 2983 batches | lr 20.00 | ms/batch 99.76 | loss  6.39 | ppl   595.52</span>
-<span class="ansi-red-fg">| epoch   1 |  1400/ 2983 batches | lr 20.00 | ms/batch 102.73 | loss  6.31 | ppl   548.38</span>
-<span class="ansi-red-fg">| epoch   1 |  1600/ 2983 batches | lr 20.00 | ms/batch 103.90 | loss  6.29 | ppl   539.20</span>
-<span class="ansi-red-fg">| epoch   1 |  1800/ 2983 batches | lr 20.00 | ms/batch 102.99 | loss  6.08 | ppl   436.73</span>
-<span class="ansi-red-fg">| epoch   1 |  2000/ 2983 batches | lr 20.00 | ms/batch 102.59 | loss  6.05 | ppl   422.07</span>
-<span class="ansi-red-fg">| epoch   1 |  2200/ 2983 batches | lr 20.00 | ms/batch 102.27 | loss  5.92 | ppl   371.01</span>
-<span class="ansi-red-fg">| epoch   1 |  2400/ 2983 batches | lr 20.00 | ms/batch 98.81 | loss  5.96 | ppl   388.87</span>
-<span class="ansi-red-fg">| epoch   1 |  2600/ 2983 batches | lr 20.00 | ms/batch 103.82 | loss  5.94 | ppl   379.04</span>
-<span class="ansi-red-fg">| epoch   1 |  2800/ 2983 batches | lr 20.00 | ms/batch 102.91 | loss  5.83 | ppl   340.01</span>
+<span class="ansi-red-fg">| epoch   1 |   200/ 2983 batches | lr 20.00 | ms/batch 87.63 | loss  8.33 | ppl  4136.34</span>
+<span class="ansi-red-fg">| epoch   1 |   400/ 2983 batches | lr 20.00 | ms/batch 87.27 | loss  7.38 | ppl  1606.61</span>
+<span class="ansi-red-fg">| epoch   1 |   600/ 2983 batches | lr 20.00 | ms/batch 87.55 | loss  6.87 | ppl   964.80</span>
+<span class="ansi-red-fg">| epoch   1 |   800/ 2983 batches | lr 20.00 | ms/batch 87.79 | loss  6.68 | ppl   794.86</span>
+<span class="ansi-red-fg">| epoch   1 |  1000/ 2983 batches | lr 20.00 | ms/batch 88.11 | loss  6.45 | ppl   632.29</span>
+<span class="ansi-red-fg">| epoch   1 |  1200/ 2983 batches | lr 20.00 | ms/batch 88.21 | loss  6.39 | ppl   595.52</span>
+<span class="ansi-red-fg">| epoch   1 |  1400/ 2983 batches | lr 20.00 | ms/batch 88.27 | loss  6.31 | ppl   548.38</span>
+<span class="ansi-red-fg">| epoch   1 |  1600/ 2983 batches | lr 20.00 | ms/batch 88.39 | loss  6.29 | ppl   539.20</span>
+<span class="ansi-red-fg">| epoch   1 |  1800/ 2983 batches | lr 20.00 | ms/batch 88.57 | loss  6.08 | ppl   436.73</span>
+<span class="ansi-red-fg">| epoch   1 |  2000/ 2983 batches | lr 20.00 | ms/batch 88.73 | loss  6.05 | ppl   422.07</span>
+<span class="ansi-red-fg">| epoch   1 |  2200/ 2983 batches | lr 20.00 | ms/batch 88.68 | loss  5.92 | ppl   371.01</span>
+<span class="ansi-red-fg">| epoch   1 |  2400/ 2983 batches | lr 20.00 | ms/batch 88.72 | loss  5.96 | ppl   388.87</span>
+<span class="ansi-red-fg">| epoch   1 |  2600/ 2983 batches | lr 20.00 | ms/batch 88.89 | loss  5.94 | ppl   379.04</span>
+<span class="ansi-red-fg">| epoch   1 |  2800/ 2983 batches | lr 20.00 | ms/batch 88.79 | loss  5.83 | ppl   340.01</span>
 <span class="ansi-red-fg">-----------------------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">| end of epoch   1 | time: 314.84s | valid loss  6.03 | valid ppl   416.09</span>
+<span class="ansi-red-fg">| end of epoch   1 | time: 272.56s | valid loss  6.03 | valid ppl   416.09</span>
 <span class="ansi-red-fg">-----------------------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">Saving the best model: {&#39;epoch&#39;: 1, &#39;lr&#39;: 20, &#39;val_loss&#39;: 6.030891246884169, &#39;val_ppl&#39;: 416.0856992612763}</span>
-<span class="ansi-red-fg">| epoch   2 |   200/ 2983 batches | lr 20.00 | ms/batch 101.99 | loss  5.83 | ppl   341.53</span>
-<span class="ansi-red-fg">| epoch   2 |   400/ 2983 batches | lr 20.00 | ms/batch 98.56 | loss  5.80 | ppl   330.97</span>
-<span class="ansi-red-fg">| epoch   2 |   600/ 2983 batches | lr 20.00 | ms/batch 102.12 | loss  5.60 | ppl   271.56</span>
-<span class="ansi-red-fg">| epoch   2 |   800/ 2983 batches | lr 20.00 | ms/batch 98.45 | loss  5.62 | ppl   277.13</span>
-<span class="ansi-red-fg">| epoch   2 |  1000/ 2983 batches | lr 20.00 | ms/batch 99.56 | loss  5.52 | ppl   249.90</span>
-<span class="ansi-red-fg">| epoch   2 |  1200/ 2983 batches | lr 20.00 | ms/batch 99.17 | loss  5.55 | ppl   257.81</span>
-<span class="ansi-red-fg">| epoch   2 |  1400/ 2983 batches | lr 20.00 | ms/batch 104.56 | loss  5.59 | ppl   268.73</span>
-<span class="ansi-red-fg">| epoch   2 |  1600/ 2983 batches | lr 20.00 | ms/batch 100.93 | loss  5.65 | ppl   284.16</span>
-<span class="ansi-red-fg">| epoch   2 |  1800/ 2983 batches | lr 20.00 | ms/batch 100.28 | loss  5.48 | ppl   239.59</span>
-<span class="ansi-red-fg">| epoch   2 |  2000/ 2983 batches | lr 20.00 | ms/batch 101.83 | loss  5.49 | ppl   241.56</span>
-<span class="ansi-red-fg">| epoch   2 |  2200/ 2983 batches | lr 20.00 | ms/batch 101.40 | loss  5.39 | ppl   219.18</span>
-<span class="ansi-red-fg">| epoch   2 |  2400/ 2983 batches | lr 20.00 | ms/batch 98.63 | loss  5.45 | ppl   233.92</span>
-<span class="ansi-red-fg">| epoch   2 |  2600/ 2983 batches | lr 20.00 | ms/batch 98.58 | loss  5.46 | ppl   236.21</span>
-<span class="ansi-red-fg">| epoch   2 |  2800/ 2983 batches | lr 20.00 | ms/batch 102.93 | loss  5.38 | ppl   217.57</span>
+<span class="ansi-red-fg">| epoch   2 |   200/ 2983 batches | lr 20.00 | ms/batch 89.27 | loss  5.83 | ppl   341.53</span>
+<span class="ansi-red-fg">| epoch   2 |   400/ 2983 batches | lr 20.00 | ms/batch 88.82 | loss  5.80 | ppl   330.97</span>
+<span class="ansi-red-fg">| epoch   2 |   600/ 2983 batches | lr 20.00 | ms/batch 88.94 | loss  5.60 | ppl   271.56</span>
+<span class="ansi-red-fg">| epoch   2 |   800/ 2983 batches | lr 20.00 | ms/batch 88.90 | loss  5.62 | ppl   277.13</span>
+<span class="ansi-red-fg">| epoch   2 |  1000/ 2983 batches | lr 20.00 | ms/batch 89.03 | loss  5.52 | ppl   249.90</span>
+<span class="ansi-red-fg">| epoch   2 |  1200/ 2983 batches | lr 20.00 | ms/batch 88.88 | loss  5.55 | ppl   257.81</span>
+<span class="ansi-red-fg">| epoch   2 |  1400/ 2983 batches | lr 20.00 | ms/batch 88.91 | loss  5.59 | ppl   268.73</span>
+<span class="ansi-red-fg">| epoch   2 |  1600/ 2983 batches | lr 20.00 | ms/batch 88.97 | loss  5.65 | ppl   284.16</span>
+<span class="ansi-red-fg">| epoch   2 |  1800/ 2983 batches | lr 20.00 | ms/batch 89.05 | loss  5.48 | ppl   239.59</span>
+<span class="ansi-red-fg">| epoch   2 |  2000/ 2983 batches | lr 20.00 | ms/batch 89.04 | loss  5.49 | ppl   241.56</span>
+<span class="ansi-red-fg">| epoch   2 |  2200/ 2983 batches | lr 20.00 | ms/batch 89.05 | loss  5.39 | ppl   219.18</span>
+<span class="ansi-red-fg">| epoch   2 |  2400/ 2983 batches | lr 20.00 | ms/batch 88.92 | loss  5.45 | ppl   233.92</span>
+<span class="ansi-red-fg">| epoch   2 |  2600/ 2983 batches | lr 20.00 | ms/batch 88.99 | loss  5.46 | ppl   236.21</span>
+<span class="ansi-red-fg">| epoch   2 |  2800/ 2983 batches | lr 20.00 | ms/batch 89.18 | loss  5.38 | ppl   217.57</span>
 <span class="ansi-red-fg">-----------------------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">| end of epoch   2 | time: 310.25s | valid loss  5.75 | valid ppl   314.53</span>
+<span class="ansi-red-fg">| end of epoch   2 | time: 274.70s | valid loss  5.75 | valid ppl   314.53</span>
 <span class="ansi-red-fg">-----------------------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">Saving the best model: {&#39;epoch&#39;: 2, &#39;lr&#39;: 20, &#39;val_loss&#39;: 5.751095302971249, &#39;val_ppl&#39;: 314.53498278374815}</span>
-<span class="ansi-red-fg">| epoch   3 |   200/ 2983 batches | lr 20.00 | ms/batch 101.13 | loss  5.45 | ppl   232.43</span>
-<span class="ansi-red-fg">| epoch   3 |   400/ 2983 batches | lr 20.00 | ms/batch 100.24 | loss  5.45 | ppl   233.06</span>
-<span class="ansi-red-fg">| epoch   3 |   600/ 2983 batches | lr 20.00 | ms/batch 100.41 | loss  5.25 | ppl   191.17</span>
-<span class="ansi-red-fg">| epoch   3 |   800/ 2983 batches | lr 20.00 | ms/batch 100.94 | loss  5.30 | ppl   200.75</span>
-<span class="ansi-red-fg">| epoch   3 |  1000/ 2983 batches | lr 20.00 | ms/batch 97.89 | loss  5.22 | ppl   185.25</span>
-<span class="ansi-red-fg">| epoch   3 |  1200/ 2983 batches | lr 20.00 | ms/batch 98.74 | loss  5.27 | ppl   193.69</span>
-<span class="ansi-red-fg">| epoch   3 |  1400/ 2983 batches | lr 20.00 | ms/batch 102.30 | loss  5.33 | ppl   207.32</span>
-<span class="ansi-red-fg">| epoch   3 |  1600/ 2983 batches | lr 20.00 | ms/batch 103.55 | loss  5.40 | ppl   221.43</span>
-<span class="ansi-red-fg">| epoch   3 |  1800/ 2983 batches | lr 20.00 | ms/batch 103.36 | loss  5.23 | ppl   187.49</span>
-<span class="ansi-red-fg">| epoch   3 |  2000/ 2983 batches | lr 20.00 | ms/batch 101.96 | loss  5.26 | ppl   192.34</span>
-<span class="ansi-red-fg">| epoch   3 |  2200/ 2983 batches | lr 20.00 | ms/batch 103.89 | loss  5.16 | ppl   173.74</span>
-<span class="ansi-red-fg">| epoch   3 |  2400/ 2983 batches | lr 20.00 | ms/batch 101.56 | loss  5.23 | ppl   186.43</span>
-<span class="ansi-red-fg">| epoch   3 |  2600/ 2983 batches | lr 20.00 | ms/batch 100.46 | loss  5.25 | ppl   190.77</span>
-<span class="ansi-red-fg">| epoch   3 |  2800/ 2983 batches | lr 20.00 | ms/batch 104.51 | loss  5.18 | ppl   177.47</span>
+<span class="ansi-red-fg">| epoch   3 |   200/ 2983 batches | lr 20.00 | ms/batch 89.24 | loss  5.45 | ppl   232.43</span>
+<span class="ansi-red-fg">| epoch   3 |   400/ 2983 batches | lr 20.00 | ms/batch 88.98 | loss  5.45 | ppl   233.06</span>
+<span class="ansi-red-fg">| epoch   3 |   600/ 2983 batches | lr 20.00 | ms/batch 89.14 | loss  5.25 | ppl   191.17</span>
+<span class="ansi-red-fg">| epoch   3 |   800/ 2983 batches | lr 20.00 | ms/batch 89.08 | loss  5.30 | ppl   200.75</span>
+<span class="ansi-red-fg">| epoch   3 |  1000/ 2983 batches | lr 20.00 | ms/batch 88.97 | loss  5.22 | ppl   185.25</span>
+<span class="ansi-red-fg">| epoch   3 |  1200/ 2983 batches | lr 20.00 | ms/batch 89.06 | loss  5.27 | ppl   193.69</span>
+<span class="ansi-red-fg">| epoch   3 |  1400/ 2983 batches | lr 20.00 | ms/batch 89.08 | loss  5.33 | ppl   207.32</span>
+<span class="ansi-red-fg">| epoch   3 |  1600/ 2983 batches | lr 20.00 | ms/batch 89.11 | loss  5.40 | ppl   221.43</span>
+<span class="ansi-red-fg">| epoch   3 |  1800/ 2983 batches | lr 20.00 | ms/batch 89.16 | loss  5.23 | ppl   187.49</span>
+<span class="ansi-red-fg">| epoch   3 |  2000/ 2983 batches | lr 20.00 | ms/batch 89.20 | loss  5.26 | ppl   192.34</span>
+<span class="ansi-red-fg">| epoch   3 |  2200/ 2983 batches | lr 20.00 | ms/batch 89.25 | loss  5.16 | ppl   173.74</span>
+<span class="ansi-red-fg">| epoch   3 |  2400/ 2983 batches | lr 20.00 | ms/batch 89.25 | loss  5.23 | ppl   186.43</span>
+<span class="ansi-red-fg">| epoch   3 |  2600/ 2983 batches | lr 20.00 | ms/batch 89.17 | loss  5.25 | ppl   190.77</span>
+<span class="ansi-red-fg">| epoch   3 |  2800/ 2983 batches | lr 20.00 | ms/batch 89.42 | loss  5.18 | ppl   177.47</span>
 <span class="ansi-red-fg">-----------------------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">| end of epoch   3 | time: 314.09s | valid loss  5.65 | valid ppl   283.93</span>
+<span class="ansi-red-fg">| end of epoch   3 | time: 275.17s | valid loss  5.65 | valid ppl   283.93</span>
 <span class="ansi-red-fg">-----------------------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">Saving the best model: {&#39;epoch&#39;: 3, &#39;lr&#39;: 20, &#39;val_loss&#39;: 5.648728454820682, &#39;val_ppl&#39;: 283.9302061087303}</span>
-<span class="ansi-red-fg">| epoch   4 |   200/ 2983 batches | lr 20.00 | ms/batch 102.88 | loss  5.25 | ppl   190.49</span>
-<span class="ansi-red-fg">| epoch   4 |   400/ 2983 batches | lr 20.00 | ms/batch 99.69 | loss  5.27 | ppl   193.59</span>
-<span class="ansi-red-fg">| epoch   4 |   600/ 2983 batches | lr 20.00 | ms/batch 101.45 | loss  5.06 | ppl   157.97</span>
-<span class="ansi-red-fg">| epoch   4 |   800/ 2983 batches | lr 20.00 | ms/batch 96.16 | loss  5.13 | ppl   168.75</span>
-<span class="ansi-red-fg">| epoch   4 |  1000/ 2983 batches | lr 20.00 | ms/batch 99.60 | loss  5.05 | ppl   156.66</span>
-<span class="ansi-red-fg">| epoch   4 |  1200/ 2983 batches | lr 20.00 | ms/batch 102.46 | loss  5.11 | ppl   165.33</span>
-<span class="ansi-red-fg">| epoch   4 |  1400/ 2983 batches | lr 20.00 | ms/batch 100.80 | loss  5.18 | ppl   176.89</span>
-<span class="ansi-red-fg">| epoch   4 |  1600/ 2983 batches | lr 20.00 | ms/batch 101.67 | loss  5.24 | ppl   189.53</span>
-<span class="ansi-red-fg">| epoch   4 |  1800/ 2983 batches | lr 20.00 | ms/batch 102.26 | loss  5.09 | ppl   162.49</span>
-<span class="ansi-red-fg">| epoch   4 |  2000/ 2983 batches | lr 20.00 | ms/batch 98.29 | loss  5.12 | ppl   167.23</span>
-<span class="ansi-red-fg">| epoch   4 |  2200/ 2983 batches | lr 20.00 | ms/batch 99.95 | loss  5.02 | ppl   151.02</span>
-<span class="ansi-red-fg">| epoch   4 |  2400/ 2983 batches | lr 20.00 | ms/batch 103.02 | loss  5.09 | ppl   162.49</span>
-<span class="ansi-red-fg">| epoch   4 |  2600/ 2983 batches | lr 20.00 | ms/batch 103.36 | loss  5.12 | ppl   166.55</span>
-<span class="ansi-red-fg">| epoch   4 |  2800/ 2983 batches | lr 20.00 | ms/batch 97.89 | loss  5.05 | ppl   155.38</span>
+<span class="ansi-red-fg">| epoch   4 |   200/ 2983 batches | lr 20.00 | ms/batch 89.74 | loss  5.25 | ppl   190.49</span>
+<span class="ansi-red-fg">| epoch   4 |   400/ 2983 batches | lr 20.00 | ms/batch 89.36 | loss  5.27 | ppl   193.59</span>
+<span class="ansi-red-fg">| epoch   4 |   600/ 2983 batches | lr 20.00 | ms/batch 89.48 | loss  5.06 | ppl   157.97</span>
+<span class="ansi-red-fg">| epoch   4 |   800/ 2983 batches | lr 20.00 | ms/batch 89.51 | loss  5.13 | ppl   168.75</span>
+<span class="ansi-red-fg">| epoch   4 |  1000/ 2983 batches | lr 20.00 | ms/batch 89.40 | loss  5.05 | ppl   156.66</span>
+<span class="ansi-red-fg">| epoch   4 |  1200/ 2983 batches | lr 20.00 | ms/batch 89.42 | loss  5.11 | ppl   165.33</span>
+<span class="ansi-red-fg">| epoch   4 |  1400/ 2983 batches | lr 20.00 | ms/batch 89.48 | loss  5.18 | ppl   176.89</span>
+<span class="ansi-red-fg">| epoch   4 |  1600/ 2983 batches | lr 20.00 | ms/batch 89.74 | loss  5.24 | ppl   189.53</span>
+<span class="ansi-red-fg">| epoch   4 |  1800/ 2983 batches | lr 20.00 | ms/batch 89.62 | loss  5.09 | ppl   162.49</span>
+<span class="ansi-red-fg">| epoch   4 |  2000/ 2983 batches | lr 20.00 | ms/batch 89.52 | loss  5.12 | ppl   167.23</span>
+<span class="ansi-red-fg">| epoch   4 |  2200/ 2983 batches | lr 20.00 | ms/batch 89.52 | loss  5.02 | ppl   151.02</span>
+<span class="ansi-red-fg">| epoch   4 |  2400/ 2983 batches | lr 20.00 | ms/batch 89.52 | loss  5.09 | ppl   162.49</span>
+<span class="ansi-red-fg">| epoch   4 |  2600/ 2983 batches | lr 20.00 | ms/batch 89.50 | loss  5.12 | ppl   166.55</span>
+<span class="ansi-red-fg">| epoch   4 |  2800/ 2983 batches | lr 20.00 | ms/batch 89.58 | loss  5.05 | ppl   155.38</span>
 <span class="ansi-red-fg">-----------------------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">| end of epoch   4 | time: 311.09s | valid loss  5.60 | valid ppl   270.80</span>
+<span class="ansi-red-fg">| end of epoch   4 | time: 276.28s | valid loss  5.60 | valid ppl   270.80</span>
 <span class="ansi-red-fg">-----------------------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">Saving the best model: {&#39;epoch&#39;: 4, &#39;lr&#39;: 20, &#39;val_loss&#39;: 5.601393558680628, &#39;val_ppl&#39;: 270.803525200536}</span>
-<span class="ansi-red-fg">| epoch   5 |   200/ 2983 batches | lr 20.00 | ms/batch 100.16 | loss  5.12 | ppl   167.99</span>
-<span class="ansi-red-fg">| epoch   5 |   400/ 2983 batches | lr 20.00 | ms/batch 100.01 | loss  5.14 | ppl   170.05</span>
-<span class="ansi-red-fg">| epoch   5 |   600/ 2983 batches | lr 20.00 | ms/batch 101.26 | loss  4.94 | ppl   139.46</span>
-<span class="ansi-red-fg">| epoch   5 |   800/ 2983 batches | lr 20.00 | ms/batch 99.55 | loss  5.00 | ppl   149.02</span>
-<span class="ansi-red-fg">| epoch   5 |  1000/ 2983 batches | lr 20.00 | ms/batch 105.54 | loss  4.95 | ppl   140.72</span>
-<span class="ansi-red-fg">| epoch   5 |  1200/ 2983 batches | lr 20.00 | ms/batch 105.39 | loss  5.00 | ppl   148.11</span>
-<span class="ansi-red-fg">| epoch   5 |  1400/ 2983 batches | lr 20.00 | ms/batch 102.46 | loss  5.07 | ppl   158.69</span>
-<span class="ansi-red-fg">| epoch   5 |  1600/ 2983 batches | lr 20.00 | ms/batch 101.12 | loss  5.14 | ppl   170.79</span>
-<span class="ansi-red-fg">| epoch   5 |  1800/ 2983 batches | lr 20.00 | ms/batch 103.70 | loss  4.98 | ppl   145.98</span>
-<span class="ansi-red-fg">| epoch   5 |  2000/ 2983 batches | lr 20.00 | ms/batch 104.99 | loss  5.02 | ppl   151.35</span>
-<span class="ansi-red-fg">| epoch   5 |  2200/ 2983 batches | lr 20.00 | ms/batch 102.08 | loss  4.91 | ppl   135.80</span>
-<span class="ansi-red-fg">| epoch   5 |  2400/ 2983 batches | lr 20.00 | ms/batch 101.99 | loss  4.98 | ppl   145.65</span>
-<span class="ansi-red-fg">| epoch   5 |  2600/ 2983 batches | lr 20.00 | ms/batch 101.45 | loss  5.01 | ppl   149.46</span>
-<span class="ansi-red-fg">| epoch   5 |  2800/ 2983 batches | lr 20.00 | ms/batch 101.64 | loss  4.95 | ppl   140.62</span>
+<span class="ansi-red-fg">| epoch   5 |   200/ 2983 batches | lr 20.00 | ms/batch 90.08 | loss  5.12 | ppl   167.99</span>
+<span class="ansi-red-fg">| epoch   5 |   400/ 2983 batches | lr 20.00 | ms/batch 89.47 | loss  5.14 | ppl   170.05</span>
+<span class="ansi-red-fg">| epoch   5 |   600/ 2983 batches | lr 20.00 | ms/batch 89.64 | loss  4.94 | ppl   139.46</span>
+<span class="ansi-red-fg">| epoch   5 |   800/ 2983 batches | lr 20.00 | ms/batch 89.62 | loss  5.00 | ppl   149.02</span>
+<span class="ansi-red-fg">| epoch   5 |  1000/ 2983 batches | lr 20.00 | ms/batch 89.67 | loss  4.95 | ppl   140.72</span>
+<span class="ansi-red-fg">| epoch   5 |  1200/ 2983 batches | lr 20.00 | ms/batch 89.67 | loss  5.00 | ppl   148.11</span>
+<span class="ansi-red-fg">| epoch   5 |  1400/ 2983 batches | lr 20.00 | ms/batch 89.55 | loss  5.07 | ppl   158.69</span>
+<span class="ansi-red-fg">| epoch   5 |  1600/ 2983 batches | lr 20.00 | ms/batch 89.54 | loss  5.14 | ppl   170.79</span>
+<span class="ansi-red-fg">| epoch   5 |  1800/ 2983 batches | lr 20.00 | ms/batch 89.48 | loss  4.98 | ppl   145.98</span>
+<span class="ansi-red-fg">| epoch   5 |  2000/ 2983 batches | lr 20.00 | ms/batch 89.67 | loss  5.02 | ppl   151.35</span>
+<span class="ansi-red-fg">| epoch   5 |  2200/ 2983 batches | lr 20.00 | ms/batch 89.62 | loss  4.91 | ppl   135.80</span>
+<span class="ansi-red-fg">| epoch   5 |  2400/ 2983 batches | lr 20.00 | ms/batch 89.76 | loss  4.98 | ppl   145.65</span>
+<span class="ansi-red-fg">| epoch   5 |  2600/ 2983 batches | lr 20.00 | ms/batch 89.70 | loss  5.01 | ppl   149.46</span>
+<span class="ansi-red-fg">| epoch   5 |  2800/ 2983 batches | lr 20.00 | ms/batch 89.74 | loss  4.95 | ppl   140.62</span>
 <span class="ansi-red-fg">-----------------------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">| end of epoch   5 | time: 315.24s | valid loss  5.58 | valid ppl   265.60</span>
+<span class="ansi-red-fg">| end of epoch   5 | time: 276.69s | valid loss  5.58 | valid ppl   265.60</span>
 <span class="ansi-red-fg">-----------------------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">Saving the best model: {&#39;epoch&#39;: 5, &#39;lr&#39;: 20, &#39;val_loss&#39;: 5.582009914122485, &#39;val_ppl&#39;: 265.60491272120066}</span>
-<span class="ansi-red-fg">| epoch   6 |   200/ 2983 batches | lr 20.00 | ms/batch 101.39 | loss  5.02 | ppl   151.79</span>
-<span class="ansi-red-fg">| epoch   6 |   400/ 2983 batches | lr 20.00 | ms/batch 102.82 | loss  5.04 | ppl   153.73</span>
-<span class="ansi-red-fg">| epoch   6 |   600/ 2983 batches | lr 20.00 | ms/batch 106.70 | loss  4.84 | ppl   126.57</span>
-<span class="ansi-red-fg">| epoch   6 |   800/ 2983 batches | lr 20.00 | ms/batch 103.51 | loss  4.91 | ppl   135.96</span>
-<span class="ansi-red-fg">| epoch   6 |  1000/ 2983 batches | lr 20.00 | ms/batch 106.26 | loss  4.86 | ppl   129.46</span>
-<span class="ansi-red-fg">| epoch   6 |  1200/ 2983 batches | lr 20.00 | ms/batch 105.37 | loss  4.92 | ppl   136.79</span>
-<span class="ansi-red-fg">| epoch   6 |  1400/ 2983 batches | lr 20.00 | ms/batch 107.38 | loss  4.98 | ppl   145.84</span>
-<span class="ansi-red-fg">| epoch   6 |  1600/ 2983 batches | lr 20.00 | ms/batch 100.62 | loss  5.05 | ppl   156.77</span>
-<span class="ansi-red-fg">| epoch   6 |  1800/ 2983 batches | lr 20.00 | ms/batch 102.93 | loss  4.91 | ppl   135.50</span>
-<span class="ansi-red-fg">| epoch   6 |  2000/ 2983 batches | lr 20.00 | ms/batch 102.72 | loss  4.94 | ppl   139.67</span>
-<span class="ansi-red-fg">| epoch   6 |  2200/ 2983 batches | lr 20.00 | ms/batch 104.95 | loss  4.84 | ppl   125.85</span>
-<span class="ansi-red-fg">| epoch   6 |  2400/ 2983 batches | lr 20.00 | ms/batch 103.57 | loss  4.90 | ppl   134.81</span>
-<span class="ansi-red-fg">| epoch   6 |  2600/ 2983 batches | lr 20.00 | ms/batch 101.15 | loss  4.93 | ppl   138.93</span>
-<span class="ansi-red-fg">| epoch   6 |  2800/ 2983 batches | lr 20.00 | ms/batch 101.76 | loss  4.88 | ppl   131.10</span>
-
-2019-11-18 06:00:49 Uploading - Uploading generated training model<span class="ansi-red-fg">-----------------------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">| end of epoch   6 | time: 319.49s | valid loss  5.56 | valid ppl   258.59</span>
+<span class="ansi-red-fg">| epoch   6 |   200/ 2983 batches | lr 20.00 | ms/batch 90.11 | loss  5.02 | ppl   151.79</span>
+<span class="ansi-red-fg">| epoch   6 |   400/ 2983 batches | lr 20.00 | ms/batch 89.69 | loss  5.04 | ppl   153.73</span>
+<span class="ansi-red-fg">| epoch   6 |   600/ 2983 batches | lr 20.00 | ms/batch 89.74 | loss  4.84 | ppl   126.57</span>
+<span class="ansi-red-fg">| epoch   6 |   800/ 2983 batches | lr 20.00 | ms/batch 89.71 | loss  4.91 | ppl   135.96</span>
+<span class="ansi-red-fg">| epoch   6 |  1000/ 2983 batches | lr 20.00 | ms/batch 89.68 | loss  4.86 | ppl   129.46</span>
+<span class="ansi-red-fg">| epoch   6 |  1200/ 2983 batches | lr 20.00 | ms/batch 89.72 | loss  4.92 | ppl   136.79</span>
+<span class="ansi-red-fg">| epoch   6 |  1400/ 2983 batches | lr 20.00 | ms/batch 89.65 | loss  4.98 | ppl   145.84</span>
+<span class="ansi-red-fg">| epoch   6 |  1600/ 2983 batches | lr 20.00 | ms/batch 89.62 | loss  5.05 | ppl   156.77</span>
+<span class="ansi-red-fg">| epoch   6 |  1800/ 2983 batches | lr 20.00 | ms/batch 89.63 | loss  4.91 | ppl   135.50</span>
+<span class="ansi-red-fg">| epoch   6 |  2000/ 2983 batches | lr 20.00 | ms/batch 89.64 | loss  4.94 | ppl   139.67</span>
+<span class="ansi-red-fg">| epoch   6 |  2200/ 2983 batches | lr 20.00 | ms/batch 89.63 | loss  4.84 | ppl   125.85</span>
+<span class="ansi-red-fg">| epoch   6 |  2400/ 2983 batches | lr 20.00 | ms/batch 89.62 | loss  4.90 | ppl   134.81</span>
+<span class="ansi-red-fg">| epoch   6 |  2600/ 2983 batches | lr 20.00 | ms/batch 89.64 | loss  4.93 | ppl   138.93</span>
+<span class="ansi-red-fg">| epoch   6 |  2800/ 2983 batches | lr 20.00 | ms/batch 89.70 | loss  4.88 | ppl   131.10</span>
+<span class="ansi-red-fg">-----------------------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">| end of epoch   6 | time: 276.77s | valid loss  5.56 | valid ppl   258.59</span>
 <span class="ansi-red-fg">-----------------------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">Saving the best model: {&#39;epoch&#39;: 6, &#39;lr&#39;: 20, &#39;val_loss&#39;: 5.555247321546878, &#39;val_ppl&#39;: 258.5909117167824}</span>
-<span class="ansi-red-fg">=========================================================================================</span>
+
+2019-11-28 18:14:39 Uploading - Uploading generated training model<span class="ansi-red-fg">=========================================================================================</span>
 <span class="ansi-red-fg">| End of training | test loss  5.57 | test ppl   262.91</span>
 <span class="ansi-red-fg">=========================================================================================</span>
-<span class="ansi-red-fg">2019-11-18 06:00:48,376 sagemaker-containers INFO     Reporting training SUCCESS</span>
+<span class="ansi-red-fg">2019-11-28 18:14:39,240 sagemaker-containers INFO     Reporting training SUCCESS</span>
 
-2019-11-18 06:01:10 Completed - Training job completed
-Training seconds: 2137
-Billable seconds: 2137
+2019-11-28 18:15:00 Completed - Training job completed
+Training seconds: 1877
+Billable seconds: 1877
 </pre>
 </div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="How-we-monitor-training">How we monitor training<a class="anchor-link" href="#How-we-monitor-training">&#182;</a></h3><div class="highlight"><pre><span></span><span class="o">|</span> <span class="n">epoch</span>   <span class="mi">3</span> <span class="o">|</span>  <span class="mi">2200</span><span class="o">/</span> <span class="mi">2983</span> <span class="n">batches</span> <span class="o">|</span> <span class="n">lr</span> <span class="mf">20.00</span> <span class="o">|</span> <span class="n">ms</span><span class="o">/</span><span class="n">batch</span> <span class="mf">89.25</span> <span class="o">|</span> <span class="n">loss</span>  <span class="mf">5.16</span> <span class="o">|</span> <span class="n">ppl</span>   <span class="mf">173.74</span>
+</pre></div>
+<p>epoch - is the current turn of the loop for training - for each epoch we go through the entire training dataset
+batches - as we saw before we have split up training in batches also check <a href="https://datascience.stackexchange.com/questions/16807/why-mini-batch-size-is-better-than-one-single-batch-with-all-training-data">here</a></p>
+<p>&amp; from Yann LeCun's facebook -</p>
+<blockquote><p>Training with large minibatches is bad for your health. More importantly, it's bad for your test error. Friends dont let friends use minibatches larger than 32. Let's face it: the only people have switched to minibatch sizes larger than one since 2012 is because GPUs are inefficient for batch sizes smaller than 32. That's a terrible reason. It just means our hardware sucks.</p>
+</blockquote>
+<p>lr - Learning Rate - more (here)[<a href="https://blog.floydhub.com/a-beginners-guide-on-recurrent-neural-networks-with-pytorch/">https://blog.floydhub.com/a-beginners-guide-on-recurrent-neural-networks-with-pytorch/</a>] and (here)[<a href="https://blog.floydhub.com/guide-to-hyperparameters-search-for-deep-learning-models/">https://blog.floydhub.com/guide-to-hyperparameters-search-for-deep-learning-models/</a>]
+Learning rate is at the rate at which our model updates the weights in the cells each time back-propogation is done.</p>
+<p>ms/batch - time taken per batch</p>
+<p>loss - current training loss, and the end of epoch we calculate validation loss</p>
+<p>ppl - this is math.exp(loss) - but why we print and track here other than signalling a change in the loss value. #TODO - if someone knows this better please submit a pull request.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[13]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%%html</span>
+<span class="p">&lt;</span><span class="nt">iframe</span> <span class="na">src</span><span class="o">=</span><span class="s">&quot;https://instacalc.com/53287/embed&quot;</span> <span class="na">width</span><span class="o">=</span><span class="s">&quot;450&quot;</span> <span class="na">height</span><span class="o">=</span><span class="s">&quot;350&quot;</span> <span class="na">frameborder</span><span class="o">=</span><span class="s">&quot;0&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">iframe</span><span class="p">&gt;</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+
+<div class="output_html rendered_html output_subarea ">
+<iframe src="https://instacalc.com/53287/embed" width="450" height="350" frameborder="0"></iframe>
+</div>
+
 </div>
 
 </div>
@@ -13755,6 +14049,101 @@ We will use Git integration for hosting too since the hosting code is also in th
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Lets-dissect-generate.py's-hosting-methods">Lets dissect generate.py's hosting methods<a class="anchor-link" href="#Lets-dissect-generate.py's-hosting-methods">&#182;</a></h3><p>Please note: Following explanations have been adapted from Chainer continer examples, for a more detailed and authoratative description please go <a href="https://github.com/aws/sagemaker-python-sdk/blob/fa14b32e63087d9f9a0bdbf63e9e39d151975dec/doc/using_pytorch.rst">here</a></p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">rnn</span> <span class="kn">import</span> <span class="n">RNNModel</span>
+</pre></div>
+<p>We start with importing the basic RNN from rnn.py</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">model_fn</span><span class="p">(</span><span class="n">model_dir</span><span class="p">):</span>
+    <span class="n">model_info</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="n">corpus</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">Corpus</span><span class="p">(</span><span class="n">model_dir</span><span class="p">)</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Before a model can be served, it must be loaded. The SageMaker PyTorch model server loads your model by invoking a model_fn</span>
+<span class="sd">    function that you must provide in your script. The model_fn should have the following signature:</span>
+
+<span class="sd">    def model_fn(model_dir)</span>
+
+<span class="sd">    SageMaker will inject the directory where your model files and sub-directories, saved by save, have been mounted. </span>
+<span class="sd">    Your model function should return a model object that can be used for model serving.</span>
+
+<span class="sd">    This function is called by the Pytroch container during hosting when running on SageMaker with</span>
+<span class="sd">    values populated by the hosting environment.</span>
+
+<span class="sd">    This function loads models written during training into `model_dir`.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        model_dir (str): path to the directory containing the saved model artifacts</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        a loaded Pytorch model</span>
+<span class="sd">    For more on `model_fn`, please visit the sagemaker-python-sdk repository:</span>
+<span class="sd">    https://github.com/aws/sagemaker-python-sdk/blob/fa14b32e63087d9f9a0bdbf63e9e39d151975dec/doc/using_pytorch.rst</span>
+<span class="sd">    For more on the Pytorch container, please visit the sagemaker-pytorch-containers repository:</span>
+<span class="sd">    https://github.com/aws/sagemaker-pytorch-container</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+<p>It deals with loading the model and the corups. <a href="https://pytorch.org/tutorials/beginner/saving_loading_models.html">A common PyTorch convention</a> is to save models using either a .pt or .pth file extension.</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">input_fn</span><span class="p">(</span><span class="n">serialized_input_data</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="n">JSON_CONTENT_TYPE</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;This function is called on the byte stream sent by the client, and is used to deserialize the</span>
+<span class="sd">    bytes into a Python object suitable for inference by predict_fn -- in this case, a NumPy array.</span>
+
+<span class="sd">    This implementation is effectively identical to the default implementation used in the Pytorch</span>
+<span class="sd">    container, for NPY formatted data. This function is included in this script to demonstrate</span>
+<span class="sd">    how one might implement `input_fn`.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        input_bytes (numpy array): a numpy array containing the data serialized by the PyTorch predictor</span>
+<span class="sd">        content_type: the MIME type of the data in input_bytes</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        a NumPy array represented by input_bytes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+<p>Deals with deserializing the input data.</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">predict_fn</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+
+    <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    This function receives a NumPy array and makes a prediction on it using the model returned</span>
+<span class="s2">    by `model_fn`.</span>
+
+<span class="s2">    The default predictor used by `PyTorch` serializes input data to the &#39;npy&#39; format:</span>
+<span class="s2">    https://docs.scipy.org/doc/numpy-1.14.0/neps/npy-format.html</span>
+<span class="s2">    The PyTorch container provides an overridable pre-processing function `input_fn`</span>
+<span class="s2">    that accepts the serialized input data and deserializes it into a NumPy array.</span>
+<span class="s2">    `input_fn` is invoked before `predict_fn` and passes its return value to this function</span>
+<span class="s2">    (as `input_data`)</span>
+
+<span class="s2">    The PyTorch container provides an overridable post-processing function `output_fn`</span>
+<span class="s2">    that accepts this function&#39;s return value and serializes it back into `npy` format, which</span>
+<span class="s2">    the PyTorch predictor can deserialize back into a NumPy array on the client.</span>
+<span class="s2">    Args:</span>
+<span class="s2">        input_data: a numpy array containing the data serialized by the PyTorch predictor</span>
+<span class="s2">        model: the return value of `model_fn`</span>
+<span class="s2">    Returns:</span>
+<span class="s2">        a NumPy array containing predictions which will be returned to the client</span>
+</pre></div>
+<p>&amp; Finally</p>
+<div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">output_fn</span><span class="p">(</span><span class="n">prediction_output</span><span class="p">,</span> <span class="n">accept</span><span class="o">=</span><span class="n">JSON_CONTENT_TYPE</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;This function is called on the return value of predict_fn, and is used to serialize the</span>
+<span class="sd">    predictions back to the client.</span>
+
+<span class="sd">    This implementation is effectively identical to the default implementation used in the PyTorch</span>
+<span class="sd">    container, for NPY formatted data. This function is included in this script to demonstrate</span>
+<span class="sd">    how one might implement `output_fn`.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        prediction_output (numpy array): a numpy array containing the data serialized by the PyTorch predictor</span>
+<span class="sd">        accept: the MIME type of the data expected by the client.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        a tuple containing a serialized NumPy array and the MIME type of the serialized data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="Import-model-into-SageMaker">Import model into SageMaker<a class="anchor-link" href="#Import-model-into-SageMaker">&#182;</a></h3><p>The PyTorch model uses a npy serializer and deserializer by default. For this example, since we have a custom implementation of all the hosting functions and plan on using JSON instead, we need a predictor that can serialize and deserialize JSON.</p>
 
 </div>
@@ -13762,7 +14151,7 @@ We will use Git integration for hosting too since the hosting code is also in th
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[8]:</div>
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">sagemaker.predictor</span> <span class="k">import</span> <span class="n">RealTimePredictor</span><span class="p">,</span> <span class="n">json_serializer</span><span class="p">,</span> <span class="n">json_deserializer</span>
@@ -13787,7 +14176,7 @@ We will use Git integration for hosting too since the hosting code is also in th
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[9]:</div>
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">sagemaker.pytorch</span> <span class="k">import</span> <span class="n">PyTorchModel</span>
@@ -13811,6 +14200,23 @@ We will use Git integration for hosting too since the hosting code is also in th
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+<p>The PyTorchModel constructor takes the following arguments:</p>
+<ul>
+<li>model_dat: An S3 location of a SageMaker model data .tar.gz file</li>
+<li>role: An IAM role name or Arn for SageMaker to access AWS resources on your behalf.</li>
+<li>predictor_cls: A function to call to create a predictor. If not None, deploy will return the result of invoking this function on the created endpoint name</li>
+<li>entry_point: Path (absolute or relative) to the Python file which should be executed as the entry point to model hosting.</li>
+<li>source_dir: Optional. Path (absolute or relative) to a directory with any other training source code dependencies including tne entry point file. Structure within this directory will be preserved when training on SageMaker.</li>
+<li>sagemaker_session: The SageMaker Session object, used for SageMaker interaction</li>
+</ul>
+<p>Your model data must be a .tar.gz file in S3. SageMaker Training Job model data is saved to .tar.gz files in S3, however if you have local data you want to deploy, you can prepare the data yourself.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="Create-endpoint">Create endpoint<a class="anchor-link" href="#Create-endpoint">&#182;</a></h3><p>Now the model is ready to be deployed at a SageMaker endpoint and we are going to use the <code>sagemaker.pytorch.model.PyTorchModel.deploy</code> method to do this. We can use a CPU-based instance for inference (in this case an ml.m4.xlarge), even though we trained on GPU instances, because at the end of training we moved model to cpu before returning it. This way we can load trained model on any device and then move to GPU if CUDA is available.</p>
 
 </div>
@@ -13818,7 +14224,7 @@ We will use Git integration for hosting too since the hosting code is also in th
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">predictor</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">deploy</span><span class="p">(</span><span class="n">initial_instance_count</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">instance_type</span><span class="o">=</span><span class="s1">&#39;ml.m4.xlarge&#39;</span><span class="p">)</span>
@@ -13838,7 +14244,7 @@ We will use Git integration for hosting too since the hosting code is also in th
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>--------------------------------------------------------------------------------------------------!</pre>
+<pre>----------------------------------------------------------------------------------------!</pre>
 </div>
 </div>
 
@@ -13856,7 +14262,7 @@ We will use Git integration for hosting too since the hosting code is also in th
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[11]:</div>
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="nb">input</span> <span class="o">=</span> <span class="p">{</span>
@@ -13917,10 +14323,23 @@ achieving satirist tripped clarity electrocyclizations Roussel Megabus frustrati
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[12]:</div>
+<div class="prompt input_prompt">In&nbsp;[11]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#sagemaker_session.delete_endpoint(predictor.endpoint)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">sagemaker_session</span><span class="o">.</span><span class="n">delete_endpoint</span><span class="p">(</span><span class="n">predictor</span><span class="o">.</span><span class="n">endpoint</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span> 
 </pre></div>
 
     </div>
