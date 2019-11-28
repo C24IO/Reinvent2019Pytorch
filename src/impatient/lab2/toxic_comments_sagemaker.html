@@ -13076,7 +13076,7 @@ div#notebook {
 
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="prompt input_prompt">In&nbsp;[16]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">sagemaker</span>
@@ -13084,6 +13084,7 @@ div#notebook {
 <span class="kn">from</span> <span class="nn">sagemaker.predictor</span> <span class="k">import</span> <span class="n">json_serializer</span>
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">boto3</span>
 </pre></div>
 
     </div>
@@ -13161,7 +13162,7 @@ div#notebook {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>make_bucket: toxic-pytorch-sagemaker-74660
+<pre>make_bucket: toxic-pytorch-sagemaker-43039
 </pre>
 </div>
 </div>
@@ -13266,7 +13267,7 @@ div#notebook {
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>&#39;s3://toxic-pytorch-sagemaker-74660/toxic_comments/input/val.csv&#39;</pre>
+<pre>&#39;s3://toxic-pytorch-sagemaker-43039/toxic_comments/input/val.csv&#39;</pre>
 </div>
 
 </div>
@@ -13299,7 +13300,7 @@ div#notebook {
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>&#39;s3://toxic-pytorch-sagemaker-74660/toxic_comments/input/labels.csv&#39;</pre>
+<pre>&#39;s3://toxic-pytorch-sagemaker-43039/toxic_comments/input/labels.csv&#39;</pre>
 </div>
 
 </div>
@@ -13332,7 +13333,7 @@ div#notebook {
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>&#39;s3://toxic-pytorch-sagemaker-74660/toxic_comments/input/train.csv&#39;</pre>
+<pre>&#39;s3://toxic-pytorch-sagemaker-43039/toxic_comments/input/train.csv&#39;</pre>
 </div>
 
 </div>
@@ -13350,6 +13351,37 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
+<div class="prompt input_prompt">In&nbsp;[18]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span>aws configure get region
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>us-west-2
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
 <div class="prompt input_prompt">In&nbsp;[10]:</div>
 <div class="inner_cell">
     <div class="input_area">
@@ -13357,8 +13389,11 @@ div#notebook {
 <span class="c1">#region = session.boto_session.region_name</span>
 
 <span class="c1">#image = &quot;{}.dkr.ecr.{}.amazonaws.com/sagemaker-bert:1.0-gpu-py36&quot;.format(account, region)</span>
-<span class="c1"># US East 1 - 111652037296.dkr.ecr.us-east-1.amazonaws.com/fluent-sagemaker-fast-bert:1.0-gpu-py36</span>
-<span class="c1"># This is in US West 2</span>
+
+<span class="c1">#Please use only the following images - </span>
+<span class="c1">#US East 1 - 111652037296.dkr.ecr.us-west-2.amazonaws.com/chazarey-sagemaker-fast-bert:1.0-gpu-py36</span>
+<span class="c1">#US West 2 - 111652037296.dkr.ecr.us-east-1.amazonaws.com/chazarey-sagemaker-fast-bert-copied:1.0-gpu-py36</span>
+
 <span class="n">image</span> <span class="o">=</span> <span class="s2">&quot;111652037296.dkr.ecr.us-west-2.amazonaws.com/chazarey-sagemaker-fast-bert:1.0-gpu-py36&quot;</span>
 <span class="c1">#TODO Convert this to using SM Pytorch </span>
 </pre></div>
@@ -13424,35 +13459,36 @@ div#notebook {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>2019-11-18 05:23:42 Starting - Starting the training job...
-2019-11-18 05:23:49 Starting - Launching requested ML instances......
-2019-11-18 05:24:52 Starting - Preparing the instances for training......
-2019-11-18 05:26:07 Downloading - Downloading input data
-2019-11-18 05:26:07 Training - Downloading the training image..............<span class="ansi-red-fg">Starting the training.</span>
+<pre>2019-11-28 16:36:25 Starting - Starting the training job...
+2019-11-28 16:36:26 Starting - Launching requested ML instances......
+2019-11-28 16:37:52 Starting - Preparing the instances for training......
+2019-11-28 16:38:55 Downloading - Downloading input data...
+2019-11-28 16:39:07 Training - Downloading the training image............
+2019-11-28 16:41:15 Training - Training image download completed. Training in progress..<span class="ansi-red-fg">Starting the training.</span>
 <span class="ansi-red-fg">/opt/ml/input/data/training/config/training_config.json</span>
 <span class="ansi-red-fg">{&#39;run_text&#39;: &#39;toxic comments&#39;, &#39;finetuned_model&#39;: None, &#39;do_lower_case&#39;: &#39;True&#39;, &#39;train_file&#39;: &#39;train.csv&#39;, &#39;val_file&#39;: &#39;val.csv&#39;, &#39;label_file&#39;: &#39;labels.csv&#39;, &#39;text_col&#39;: &#39;comment_text&#39;, &#39;label_col&#39;: &#39;[&#34;toxic&#34;, &#34;severe_toxic&#34;, &#34;obscene&#34;, &#34;threat&#34;, &#34;insult&#34;, &#34;identity_hate&#34;]&#39;, &#39;multi_label&#39;: &#39;True&#39;, &#39;grad_accumulation_steps&#39;: &#39;1&#39;, &#39;fp16_opt_level&#39;: &#39;O1&#39;, &#39;fp16&#39;: &#39;True&#39;, &#39;model_type&#39;: &#39;roberta&#39;, &#39;model_name&#39;: &#39;roberta-base&#39;, &#39;logging_steps&#39;: &#39;300&#39;}</span>
 <span class="ansi-red-fg">{&#39;train_batch_size&#39;: &#39;16&#39;, &#39;warmup_steps&#39;: &#39;1000&#39;, &#39;lr&#39;: &#39;8e-05&#39;, &#39;max_seq_length&#39;: &#39;512&#39;, &#39;optimizer_type&#39;: &#39;adamw&#39;, &#39;lr_schedule&#39;: &#39;warmup_cosine&#39;, &#39;epochs&#39;: &#39;10&#39;}</span>
-<span class="ansi-red-fg">11/18/2019 05:28:17 - INFO - root -   model path used /opt/ml/code/pretrained_models/roberta-base</span>
-<span class="ansi-red-fg">11/18/2019 05:28:17 - INFO - root -   finetuned model not available - loading standard pretrained model</span>
-<span class="ansi-red-fg">11/18/2019 05:28:17 - INFO - transformers.tokenization_utils -   Model name &#39;/opt/ml/code/pretrained_models/roberta-base&#39; not found in model shortcut name list (roberta-base, roberta-large, roberta-large-mnli). Assuming &#39;/opt/ml/code/pretrained_models/roberta-base&#39; is a path or url to a directory containing tokenizer files.</span>
-<span class="ansi-red-fg">11/18/2019 05:28:17 - INFO - transformers.tokenization_utils -   Didn&#39;t find file /opt/ml/code/pretrained_models/roberta-base/added_tokens.json. We won&#39;t load it.</span>
-<span class="ansi-red-fg">11/18/2019 05:28:17 - INFO - transformers.tokenization_utils -   Didn&#39;t find file /opt/ml/code/pretrained_models/roberta-base/special_tokens_map.json. We won&#39;t load it.</span>
-<span class="ansi-red-fg">11/18/2019 05:28:17 - INFO - transformers.tokenization_utils -   Didn&#39;t find file /opt/ml/code/pretrained_models/roberta-base/tokenizer_config.json. We won&#39;t load it.</span>
-<span class="ansi-red-fg">11/18/2019 05:28:17 - INFO - transformers.tokenization_utils -   loading file /opt/ml/code/pretrained_models/roberta-base/vocab.json</span>
-<span class="ansi-red-fg">11/18/2019 05:28:17 - INFO - transformers.tokenization_utils -   loading file /opt/ml/code/pretrained_models/roberta-base/merges.txt</span>
-<span class="ansi-red-fg">11/18/2019 05:28:17 - INFO - transformers.tokenization_utils -   loading file None</span>
-<span class="ansi-red-fg">11/18/2019 05:28:17 - INFO - transformers.tokenization_utils -   loading file None</span>
-<span class="ansi-red-fg">11/18/2019 05:28:17 - INFO - transformers.tokenization_utils -   loading file None</span>
-<span class="ansi-red-fg">11/18/2019 05:28:17 - INFO - root -   Number of GPUs: 4</span>
-<span class="ansi-red-fg">11/18/2019 05:28:17 - INFO - root -   label columns: [&#39;toxic&#39;, &#39;severe_toxic&#39;, &#39;obscene&#39;, &#39;threat&#39;, &#39;insult&#39;, &#39;identity_hate&#39;]</span>
-<span class="ansi-red-fg">11/18/2019 05:28:18 - INFO - root -   Writing example 0 of 1000</span>
-<span class="ansi-red-fg">11/18/2019 05:28:19 - INFO - root -   Saving features into cached file /opt/ml/input/data/training/cache/cached_roberta_train_multi_label_512</span>
-<span class="ansi-red-fg">11/18/2019 05:28:20 - INFO - root -   Writing example 0 of 1000</span>
-<span class="ansi-red-fg">11/18/2019 05:28:21 - INFO - root -   Saving features into cached file /opt/ml/input/data/training/cache/cached_roberta_dev_multi_label_512</span>
-<span class="ansi-red-fg">11/18/2019 05:28:22 - INFO - root -   databunch labels: 6</span>
-<span class="ansi-red-fg">11/18/2019 05:28:22 - INFO - root -   multilabel: True, multilabel type: &lt;class &#39;bool&#39;&gt;</span>
-<span class="ansi-red-fg">11/18/2019 05:28:22 - INFO - transformers.configuration_utils -   loading configuration file /opt/ml/code/pretrained_models/roberta-base/config.json</span>
-<span class="ansi-red-fg">11/18/2019 05:28:22 - INFO - transformers.configuration_utils -   Model config {
+<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - root -   model path used /opt/ml/code/pretrained_models/roberta-base</span>
+<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - root -   finetuned model not available - loading standard pretrained model</span>
+<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - transformers.tokenization_utils -   Model name &#39;/opt/ml/code/pretrained_models/roberta-base&#39; not found in model shortcut name list (roberta-base, roberta-large, roberta-large-mnli). Assuming &#39;/opt/ml/code/pretrained_models/roberta-base&#39; is a path or url to a directory containing tokenizer files.</span>
+<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - transformers.tokenization_utils -   Didn&#39;t find file /opt/ml/code/pretrained_models/roberta-base/added_tokens.json. We won&#39;t load it.</span>
+<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - transformers.tokenization_utils -   Didn&#39;t find file /opt/ml/code/pretrained_models/roberta-base/special_tokens_map.json. We won&#39;t load it.</span>
+<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - transformers.tokenization_utils -   Didn&#39;t find file /opt/ml/code/pretrained_models/roberta-base/tokenizer_config.json. We won&#39;t load it.</span>
+<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - transformers.tokenization_utils -   loading file /opt/ml/code/pretrained_models/roberta-base/vocab.json</span>
+<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - transformers.tokenization_utils -   loading file /opt/ml/code/pretrained_models/roberta-base/merges.txt</span>
+<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - transformers.tokenization_utils -   loading file None</span>
+<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - transformers.tokenization_utils -   loading file None</span>
+<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - transformers.tokenization_utils -   loading file None</span>
+<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - root -   Number of GPUs: 4</span>
+<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - root -   label columns: [&#39;toxic&#39;, &#39;severe_toxic&#39;, &#39;obscene&#39;, &#39;threat&#39;, &#39;insult&#39;, &#39;identity_hate&#39;]</span>
+<span class="ansi-red-fg">11/28/2019 16:41:20 - INFO - root -   Writing example 0 of 1000</span>
+<span class="ansi-red-fg">11/28/2019 16:41:21 - INFO - root -   Saving features into cached file /opt/ml/input/data/training/cache/cached_roberta_train_multi_label_512</span>
+<span class="ansi-red-fg">11/28/2019 16:41:22 - INFO - root -   Writing example 0 of 1000</span>
+<span class="ansi-red-fg">11/28/2019 16:41:23 - INFO - root -   Saving features into cached file /opt/ml/input/data/training/cache/cached_roberta_dev_multi_label_512</span>
+<span class="ansi-red-fg">11/28/2019 16:41:24 - INFO - root -   databunch labels: 6</span>
+<span class="ansi-red-fg">11/28/2019 16:41:24 - INFO - root -   multilabel: True, multilabel type: &lt;class &#39;bool&#39;&gt;</span>
+<span class="ansi-red-fg">11/28/2019 16:41:24 - INFO - transformers.configuration_utils -   loading configuration file /opt/ml/code/pretrained_models/roberta-base/config.json</span>
+<span class="ansi-red-fg">11/28/2019 16:41:24 - INFO - transformers.configuration_utils -   Model config {
   &#34;attention_probs_dropout_prob&#34;: 0.1,
   &#34;finetuning_task&#34;: null,
   &#34;hidden_act&#34;: &#34;gelu&#34;,
@@ -13475,10 +13511,9 @@ div#notebook {
   &#34;vocab_size&#34;: 50265</span>
 <span class="ansi-red-fg">}
 </span>
-<span class="ansi-red-fg">11/18/2019 05:28:22 - INFO - transformers.modeling_utils -   loading weights file /opt/ml/code/pretrained_models/roberta-base/pytorch_model.bin</span>
-
-2019-11-18 05:28:14 Training - Training image download completed. Training in progress.<span class="ansi-red-fg">11/18/2019 05:28:28 - INFO - transformers.modeling_utils -   Weights of RobertaForMultiLabelSequenceClassification not initialized from pretrained model: [&#39;classifier.dense.weight&#39;, &#39;classifier.dense.bias&#39;, &#39;classifier.out_proj.weight&#39;, &#39;classifier.out_proj.bias&#39;]</span>
-<span class="ansi-red-fg">11/18/2019 05:28:28 - INFO - transformers.modeling_utils -   Weights from pretrained model not used in RobertaForMultiLabelSequenceClassification: [&#39;lm_head.bias&#39;, &#39;lm_head.dense.weight&#39;, &#39;lm_head.dense.bias&#39;, &#39;lm_head.layer_norm.weight&#39;, &#39;lm_head.layer_norm.bias&#39;, &#39;lm_head.decoder.weight&#39;]</span>
+<span class="ansi-red-fg">11/28/2019 16:41:24 - INFO - transformers.modeling_utils -   loading weights file /opt/ml/code/pretrained_models/roberta-base/pytorch_model.bin</span>
+<span class="ansi-red-fg">11/28/2019 16:41:30 - INFO - transformers.modeling_utils -   Weights of RobertaForMultiLabelSequenceClassification not initialized from pretrained model: [&#39;classifier.dense.weight&#39;, &#39;classifier.dense.bias&#39;, &#39;classifier.out_proj.weight&#39;, &#39;classifier.out_proj.bias&#39;]</span>
+<span class="ansi-red-fg">11/28/2019 16:41:30 - INFO - transformers.modeling_utils -   Weights from pretrained model not used in RobertaForMultiLabelSequenceClassification: [&#39;lm_head.bias&#39;, &#39;lm_head.dense.weight&#39;, &#39;lm_head.dense.bias&#39;, &#39;lm_head.layer_norm.weight&#39;, &#39;lm_head.layer_norm.bias&#39;, &#39;lm_head.decoder.weight&#39;]</span>
 <span class="ansi-red-fg">/opt/ml/model/tensorboard</span>
 <span class="ansi-red-fg">Selected optimization level O1:  Insert automatic casts around Pytorch functions and Tensor methods.
 </span>
@@ -13499,131 +13534,131 @@ div#notebook {
 <span class="ansi-red-fg">keep_batchnorm_fp32    : None</span>
 <span class="ansi-red-fg">master_weights         : None</span>
 <span class="ansi-red-fg">loss_scale             : dynamic</span>
-<span class="ansi-red-fg">11/18/2019 05:28:35 - INFO - root -   ***** Running training *****</span>
-<span class="ansi-red-fg">11/18/2019 05:28:35 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/18/2019 05:28:35 - INFO - root -     Num Epochs = 10</span>
-<span class="ansi-red-fg">11/18/2019 05:28:35 - INFO - root -     Total train batch size (w. parallel, distributed &amp; accumulation) = 64</span>
-<span class="ansi-red-fg">11/18/2019 05:28:35 - INFO - root -     Gradient Accumulation steps = 1</span>
-<span class="ansi-red-fg">11/18/2019 05:28:35 - INFO - root -     Total optimization steps = 160</span>
+<span class="ansi-red-fg">11/28/2019 16:41:37 - INFO - root -   ***** Running training *****</span>
+<span class="ansi-red-fg">11/28/2019 16:41:37 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">11/28/2019 16:41:37 - INFO - root -     Num Epochs = 10</span>
+<span class="ansi-red-fg">11/28/2019 16:41:37 - INFO - root -     Total train batch size (w. parallel, distributed &amp; accumulation) = 64</span>
+<span class="ansi-red-fg">11/28/2019 16:41:37 - INFO - root -     Gradient Accumulation steps = 1</span>
+<span class="ansi-red-fg">11/28/2019 16:41:37 - INFO - root -     Total optimization steps = 160</span>
 <span class="ansi-red-fg">/usr/local/lib/python3.7/dist-packages/torch/nn/parallel/_functions.py:61: UserWarning: Was asked to gather along dimension 0, but all input tensors were scalars; will instead unsqueeze and return a vector.
   warnings.warn(&#39;Was asked to gather along dimension 0, but all &#39;</span>
-<span class="ansi-red-fg">11/18/2019 05:28:57 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/18/2019 05:28:57 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/18/2019 05:28:57 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/18/2019 05:28:59 - INFO - root -   eval_loss after epoch 1: 0.6754665225744247: </span>
-<span class="ansi-red-fg">11/18/2019 05:28:59 - INFO - root -   eval_accuracy_thresh after epoch 1: 0.5253333449363708: </span>
-<span class="ansi-red-fg">11/18/2019 05:28:59 - INFO - root -   eval_roc_auc after epoch 1: 0.7689667051362711: </span>
-<span class="ansi-red-fg">11/18/2019 05:28:59 - INFO - root -   eval_fbeta after epoch 1: 0.05643989518284798: </span>
-<span class="ansi-red-fg">11/18/2019 05:28:59 - INFO - root -   lr after epoch 1: 1.28e-06</span>
-<span class="ansi-red-fg">11/18/2019 05:28:59 - INFO - root -   train_loss after epoch 1: 0.6803215593099594</span>
-<span class="ansi-red-fg">11/18/2019 05:28:59 - INFO - root -   
+<span class="ansi-red-fg">11/28/2019 16:41:59 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">11/28/2019 16:41:59 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">11/28/2019 16:41:59 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">11/28/2019 16:42:01 - INFO - root -   eval_loss after epoch 1: 0.7195036858320236: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:01 - INFO - root -   eval_accuracy_thresh after epoch 1: 0.5139999985694885: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:01 - INFO - root -   eval_roc_auc after epoch 1: 0.5889381231207469: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:01 - INFO - root -   eval_fbeta after epoch 1: 0.05643989518284798: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:01 - INFO - root -   lr after epoch 1: 1.28e-06</span>
+<span class="ansi-red-fg">11/28/2019 16:42:01 - INFO - root -   train_loss after epoch 1: 0.7253432124853134</span>
+<span class="ansi-red-fg">11/28/2019 16:42:01 - INFO - root -   
 </span>
-<span class="ansi-red-fg">11/18/2019 05:29:06 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/18/2019 05:29:06 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/18/2019 05:29:06 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/18/2019 05:29:08 - INFO - root -   eval_loss after epoch 2: 0.6472188830375671: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:08 - INFO - root -   eval_accuracy_thresh after epoch 2: 0.7943333387374878: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:08 - INFO - root -   eval_roc_auc after epoch 2: 0.7819371697435917: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:08 - INFO - root -   eval_fbeta after epoch 2: 0.05643989518284798: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:08 - INFO - root -   lr after epoch 2: 2.56e-06</span>
-<span class="ansi-red-fg">11/18/2019 05:29:08 - INFO - root -   train_loss after epoch 2: 0.6627043448388577</span>
-<span class="ansi-red-fg">11/18/2019 05:29:08 - INFO - root -   
+<span class="ansi-red-fg">11/28/2019 16:42:08 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">11/28/2019 16:42:08 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">11/28/2019 16:42:08 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">11/28/2019 16:42:10 - INFO - root -   eval_loss after epoch 2: 0.694989949464798: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:10 - INFO - root -   eval_accuracy_thresh after epoch 2: 0.5148333311080933: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:10 - INFO - root -   eval_roc_auc after epoch 2: 0.5985553634219678: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:10 - INFO - root -   eval_fbeta after epoch 2: 0.05643989518284798: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:10 - INFO - root -   lr after epoch 2: 2.56e-06</span>
+<span class="ansi-red-fg">11/28/2019 16:42:10 - INFO - root -   train_loss after epoch 2: 0.7070465125143528</span>
+<span class="ansi-red-fg">11/28/2019 16:42:10 - INFO - root -   
 </span>
-<span class="ansi-red-fg">11/18/2019 05:29:15 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/18/2019 05:29:15 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/18/2019 05:29:15 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/18/2019 05:29:17 - INFO - root -   eval_loss after epoch 3: 0.5540138110518456: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:17 - INFO - root -   eval_accuracy_thresh after epoch 3: 0.9386666417121887: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:17 - INFO - root -   eval_roc_auc after epoch 3: 0.8241660844761636: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:17 - INFO - root -   eval_fbeta after epoch 3: 0.05643989518284798: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:17 - INFO - root -   lr after epoch 3: 3.8400000000000005e-06</span>
-<span class="ansi-red-fg">11/18/2019 05:29:17 - INFO - root -   train_loss after epoch 3: 0.6109085120260715</span>
-<span class="ansi-red-fg">11/18/2019 05:29:17 - INFO - root -   
+<span class="ansi-red-fg">11/28/2019 16:42:17 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">11/28/2019 16:42:17 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">11/28/2019 16:42:17 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">11/28/2019 16:42:19 - INFO - root -   eval_loss after epoch 3: 0.6377312615513802: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:19 - INFO - root -   eval_accuracy_thresh after epoch 3: 0.8186666369438171: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:19 - INFO - root -   eval_roc_auc after epoch 3: 0.6453403209059785: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:19 - INFO - root -   eval_fbeta after epoch 3: 0.05643989518284798: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:19 - INFO - root -   lr after epoch 3: 3.8400000000000005e-06</span>
+<span class="ansi-red-fg">11/28/2019 16:42:19 - INFO - root -   train_loss after epoch 3: 0.6663405001163483</span>
+<span class="ansi-red-fg">11/28/2019 16:42:19 - INFO - root -   
 </span>
-<span class="ansi-red-fg">11/18/2019 05:29:24 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/18/2019 05:29:24 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/18/2019 05:29:24 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/18/2019 05:29:26 - INFO - root -   eval_loss after epoch 4: 0.3229699656367302: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:26 - INFO - root -   eval_accuracy_thresh after epoch 4: 0.9703333377838135: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:26 - INFO - root -   eval_roc_auc after epoch 4: 0.8011325696023222: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:26 - INFO - root -   eval_fbeta after epoch 4: 0.03879454359412193: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:26 - INFO - root -   lr after epoch 4: 5.12e-06</span>
-<span class="ansi-red-fg">11/18/2019 05:29:26 - INFO - root -   train_loss after epoch 4: 0.4695482775568962</span>
-<span class="ansi-red-fg">11/18/2019 05:29:26 - INFO - root -   
+<span class="ansi-red-fg">11/28/2019 16:42:26 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">11/28/2019 16:42:26 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">11/28/2019 16:42:26 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">11/28/2019 16:42:28 - INFO - root -   eval_loss after epoch 4: 0.31159941107034683: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:28 - INFO - root -   eval_accuracy_thresh after epoch 4: 0.9703333377838135: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:28 - INFO - root -   eval_roc_auc after epoch 4: 0.7275782676326525: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:28 - INFO - root -   eval_fbeta after epoch 4: 0.0067300512455403805: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:28 - INFO - root -   lr after epoch 4: 5.12e-06</span>
+<span class="ansi-red-fg">11/28/2019 16:42:28 - INFO - root -   train_loss after epoch 4: 0.5113550964742899</span>
+<span class="ansi-red-fg">11/28/2019 16:42:28 - INFO - root -   
 </span>
-<span class="ansi-red-fg">11/18/2019 05:29:33 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/18/2019 05:29:33 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/18/2019 05:29:33 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/18/2019 05:29:35 - INFO - root -   eval_loss after epoch 5: 0.1809173971414566: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:35 - INFO - root -   eval_accuracy_thresh after epoch 5: 0.9703333377838135: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:35 - INFO - root -   eval_roc_auc after epoch 5: 0.8132726890253551: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:35 - INFO - root -   eval_fbeta after epoch 5: 0.0: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:35 - INFO - root -   lr after epoch 5: 6.4000000000000006e-06</span>
-<span class="ansi-red-fg">11/18/2019 05:29:35 - INFO - root -   train_loss after epoch 5: 0.27993842493742704</span>
-<span class="ansi-red-fg">11/18/2019 05:29:35 - INFO - root -   
+<span class="ansi-red-fg">11/28/2019 16:42:35 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">11/28/2019 16:42:35 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">11/28/2019 16:42:35 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">11/28/2019 16:42:37 - INFO - root -   eval_loss after epoch 5: 0.17762534692883492: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:37 - INFO - root -   eval_accuracy_thresh after epoch 5: 0.9703333377838135: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:37 - INFO - root -   eval_roc_auc after epoch 5: 0.7543085313746: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:37 - INFO - root -   eval_fbeta after epoch 5: 0.0: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:37 - INFO - root -   lr after epoch 5: 6.4000000000000006e-06</span>
+<span class="ansi-red-fg">11/28/2019 16:42:37 - INFO - root -   train_loss after epoch 5: 0.2628530152142048</span>
+<span class="ansi-red-fg">11/28/2019 16:42:37 - INFO - root -   
 </span>
-<span class="ansi-red-fg">11/18/2019 05:29:42 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/18/2019 05:29:42 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/18/2019 05:29:42 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/18/2019 05:29:44 - INFO - root -   eval_loss after epoch 6: 0.14499268680810928: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:44 - INFO - root -   eval_accuracy_thresh after epoch 6: 0.9703333377838135: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:44 - INFO - root -   eval_roc_auc after epoch 6: 0.8310433304127312: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:44 - INFO - root -   eval_fbeta after epoch 6: 0.0: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:44 - INFO - root -   lr after epoch 6: 7.680000000000001e-06</span>
-<span class="ansi-red-fg">11/18/2019 05:29:44 - INFO - root -   train_loss after epoch 6: 0.1904140431433916</span>
-<span class="ansi-red-fg">11/18/2019 05:29:44 - INFO - root -   
+<span class="ansi-red-fg">11/28/2019 16:42:44 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">11/28/2019 16:42:44 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">11/28/2019 16:42:44 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">11/28/2019 16:42:45 - INFO - root -   eval_loss after epoch 6: 0.14263706468045712: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:45 - INFO - root -   eval_accuracy_thresh after epoch 6: 0.9703333377838135: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:45 - INFO - root -   eval_roc_auc after epoch 6: 0.8275521173078482: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:45 - INFO - root -   eval_fbeta after epoch 6: 0.0: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:45 - INFO - root -   lr after epoch 6: 7.680000000000001e-06</span>
+<span class="ansi-red-fg">11/28/2019 16:42:45 - INFO - root -   train_loss after epoch 6: 0.18196525005623698</span>
+<span class="ansi-red-fg">11/28/2019 16:42:45 - INFO - root -   
 </span>
-<span class="ansi-red-fg">11/18/2019 05:29:51 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/18/2019 05:29:51 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/18/2019 05:29:51 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/18/2019 05:29:53 - INFO - root -   eval_loss after epoch 7: 0.12962306290864944: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:53 - INFO - root -   eval_accuracy_thresh after epoch 7: 0.9703333377838135: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:53 - INFO - root -   eval_roc_auc after epoch 7: 0.8646252687404228: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:53 - INFO - root -   eval_fbeta after epoch 7: 0.0: </span>
-<span class="ansi-red-fg">11/18/2019 05:29:53 - INFO - root -   lr after epoch 7: 8.96e-06</span>
-<span class="ansi-red-fg">11/18/2019 05:29:53 - INFO - root -   train_loss after epoch 7: 0.16062315553426743</span>
-<span class="ansi-red-fg">11/18/2019 05:29:53 - INFO - root -   
+<span class="ansi-red-fg">11/28/2019 16:42:52 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">11/28/2019 16:42:52 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">11/28/2019 16:42:52 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">11/28/2019 16:42:54 - INFO - root -   eval_loss after epoch 7: 0.12607838213443756: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:54 - INFO - root -   eval_accuracy_thresh after epoch 7: 0.9703333377838135: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:54 - INFO - root -   eval_roc_auc after epoch 7: 0.8936627437962937: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:54 - INFO - root -   eval_fbeta after epoch 7: 0.0: </span>
+<span class="ansi-red-fg">11/28/2019 16:42:54 - INFO - root -   lr after epoch 7: 8.96e-06</span>
+<span class="ansi-red-fg">11/28/2019 16:42:54 - INFO - root -   train_loss after epoch 7: 0.15724064968526363</span>
+<span class="ansi-red-fg">11/28/2019 16:42:54 - INFO - root -   
 </span>
-<span class="ansi-red-fg">11/18/2019 05:30:00 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/18/2019 05:30:00 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/18/2019 05:30:00 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/18/2019 05:30:02 - INFO - root -   eval_loss after epoch 8: 0.10711278952658176: </span>
-<span class="ansi-red-fg">11/18/2019 05:30:02 - INFO - root -   eval_accuracy_thresh after epoch 8: 0.9713333249092102: </span>
-<span class="ansi-red-fg">11/18/2019 05:30:02 - INFO - root -   eval_roc_auc after epoch 8: 0.9400424194936681: </span>
-<span class="ansi-red-fg">11/18/2019 05:30:02 - INFO - root -   eval_fbeta after epoch 8: 0.0358787402510643: </span>
-<span class="ansi-red-fg">11/18/2019 05:30:02 - INFO - root -   lr after epoch 8: 1.024e-05</span>
-<span class="ansi-red-fg">11/18/2019 05:30:02 - INFO - root -   train_loss after epoch 8: 0.13581831380724907</span>
-<span class="ansi-red-fg">11/18/2019 05:30:02 - INFO - root -   
+<span class="ansi-red-fg">11/28/2019 16:43:01 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">11/28/2019 16:43:01 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">11/28/2019 16:43:01 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">11/28/2019 16:43:03 - INFO - root -   eval_loss after epoch 8: 0.1037776218727231: </span>
+<span class="ansi-red-fg">11/28/2019 16:43:03 - INFO - root -   eval_accuracy_thresh after epoch 8: 0.9723333120346069: </span>
+<span class="ansi-red-fg">11/28/2019 16:43:03 - INFO - root -   eval_roc_auc after epoch 8: 0.9347028319547319: </span>
+<span class="ansi-red-fg">11/28/2019 16:43:03 - INFO - root -   eval_fbeta after epoch 8: 0.028056392446160316: </span>
+<span class="ansi-red-fg">11/28/2019 16:43:03 - INFO - root -   lr after epoch 8: 1.024e-05</span>
+<span class="ansi-red-fg">11/28/2019 16:43:03 - INFO - root -   train_loss after epoch 8: 0.13030934100970626</span>
+<span class="ansi-red-fg">11/28/2019 16:43:03 - INFO - root -   
 </span>
-<span class="ansi-red-fg">11/18/2019 05:30:09 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/18/2019 05:30:09 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/18/2019 05:30:09 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/18/2019 05:30:10 - INFO - root -   eval_loss after epoch 9: 0.1010807529091835: </span>
-<span class="ansi-red-fg">11/18/2019 05:30:10 - INFO - root -   eval_accuracy_thresh after epoch 9: 0.9710000157356262: </span>
-<span class="ansi-red-fg">11/18/2019 05:30:10 - INFO - root -   eval_roc_auc after epoch 9: 0.9526601924509512: </span>
-<span class="ansi-red-fg">11/18/2019 05:30:10 - INFO - root -   eval_fbeta after epoch 9: 0.05392934009432793: </span>
-<span class="ansi-red-fg">11/18/2019 05:30:10 - INFO - root -   lr after epoch 9: 1.152e-05</span>
-<span class="ansi-red-fg">11/18/2019 05:30:10 - INFO - root -   train_loss after epoch 9: 0.10212004324421287</span>
-<span class="ansi-red-fg">11/18/2019 05:30:10 - INFO - root -   
+<span class="ansi-red-fg">11/28/2019 16:43:10 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">11/28/2019 16:43:10 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">11/28/2019 16:43:10 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">11/28/2019 16:43:12 - INFO - root -   eval_loss after epoch 9: 0.09822882525622845: </span>
+<span class="ansi-red-fg">11/28/2019 16:43:12 - INFO - root -   eval_accuracy_thresh after epoch 9: 0.9721666574478149: </span>
+<span class="ansi-red-fg">11/28/2019 16:43:12 - INFO - root -   eval_roc_auc after epoch 9: 0.9415366548427313: </span>
+<span class="ansi-red-fg">11/28/2019 16:43:12 - INFO - root -   eval_fbeta after epoch 9: 0.04158548265695572: </span>
+<span class="ansi-red-fg">11/28/2019 16:43:12 - INFO - root -   lr after epoch 9: 1.152e-05</span>
+<span class="ansi-red-fg">11/28/2019 16:43:12 - INFO - root -   train_loss after epoch 9: 0.09968294110149145</span>
+<span class="ansi-red-fg">11/28/2019 16:43:12 - INFO - root -   
 </span>
-<span class="ansi-red-fg">11/18/2019 05:30:18 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/18/2019 05:30:18 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/18/2019 05:30:18 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/18/2019 05:30:19 - INFO - root -   eval_loss after epoch 10: 0.08239134401082993: </span>
-<span class="ansi-red-fg">11/18/2019 05:30:19 - INFO - root -   eval_accuracy_thresh after epoch 10: 0.9763333201408386: </span>
-<span class="ansi-red-fg">11/18/2019 05:30:19 - INFO - root -   eval_roc_auc after epoch 10: 0.9569170986455868: </span>
-<span class="ansi-red-fg">11/18/2019 05:30:19 - INFO - root -   eval_fbeta after epoch 10: 0.04201887175440788: </span>
-<span class="ansi-red-fg">11/18/2019 05:30:19 - INFO - root -   lr after epoch 10: 1.2800000000000001e-05</span>
-<span class="ansi-red-fg">11/18/2019 05:30:19 - INFO - root -   train_loss after epoch 10: 0.08527934551239014</span>
-<span class="ansi-red-fg">11/18/2019 05:30:19 - INFO - root -   
-</span>
-<span class="ansi-red-fg">11/18/2019 05:30:20 - INFO - transformers.configuration_utils -   Configuration saved in /opt/ml/model/model_out/config.json</span>
-<span class="ansi-red-fg">11/18/2019 05:30:20 - INFO - transformers.modeling_utils -   Model weights saved in /opt/ml/model/model_out/pytorch_model.bin</span>
 
-2019-11-18 05:30:26 Uploading - Uploading generated training model
-2019-11-18 05:32:12 Completed - Training job completed
-Training seconds: 381
-Billable seconds: 381
+2019-11-28 16:43:27 Uploading - Uploading generated training model<span class="ansi-red-fg">11/28/2019 16:43:19 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">11/28/2019 16:43:19 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">11/28/2019 16:43:19 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">11/28/2019 16:43:21 - INFO - root -   eval_loss after epoch 10: 0.09198387805372477: </span>
+<span class="ansi-red-fg">11/28/2019 16:43:21 - INFO - root -   eval_accuracy_thresh after epoch 10: 0.9708333015441895: </span>
+<span class="ansi-red-fg">11/28/2019 16:43:21 - INFO - root -   eval_roc_auc after epoch 10: 0.9517772571300646: </span>
+<span class="ansi-red-fg">11/28/2019 16:43:21 - INFO - root -   eval_fbeta after epoch 10: 0.04526572674512863: </span>
+<span class="ansi-red-fg">11/28/2019 16:43:21 - INFO - root -   lr after epoch 10: 1.2800000000000001e-05</span>
+<span class="ansi-red-fg">11/28/2019 16:43:21 - INFO - root -   train_loss after epoch 10: 0.08191343606449664</span>
+<span class="ansi-red-fg">11/28/2019 16:43:21 - INFO - root -   
+</span>
+<span class="ansi-red-fg">11/28/2019 16:43:21 - INFO - transformers.configuration_utils -   Configuration saved in /opt/ml/model/model_out/config.json</span>
+<span class="ansi-red-fg">11/28/2019 16:43:22 - INFO - transformers.modeling_utils -   Model weights saved in /opt/ml/model/model_out/pytorch_model.bin</span>
+
+2019-11-28 16:45:12 Completed - Training job completed
+Training seconds: 377
+Billable seconds: 377
 </pre>
 </div>
 </div>
@@ -13674,7 +13709,7 @@ Billable seconds: 381
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[15]:</div>
+<div class="prompt input_prompt">In&nbsp;[17]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1">### Invoke the Endpoint</span>
