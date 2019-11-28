@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends software-proper
         libxrender-dev \
         nginx && \
     if [ $py_version -eq 3 ]; \
-       then apt-get install -y --no-install-recommends python3.7-dev \
+       then apt-get install -y --no-install-recommends python3-distutils python3.7-dev \
            && ln -s -f /usr/bin/python3.7 /usr/bin/python; \
        else apt-get install -y --no-install-recommends python-dev; fi && \
     rm -rf /var/lib/apt/lists/*
