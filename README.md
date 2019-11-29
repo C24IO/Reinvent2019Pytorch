@@ -38,6 +38,12 @@ $ source venv/bin/activate
 ``` 
 ![](./img/ml-concepts-10.png)
 
+## Note on Notebooks
+
+If asked to select a kernel - please select - conda_pytorch_36 everytime.
+
+![](./img/Select_kernel.png) 
+
 ## Lab 1
 
 In lab 1 we exercise all the various components of SageMaker that have native Pytorch support.
@@ -94,10 +100,7 @@ Also - the folder *impatient* contains the solved labs with outputs.
 * [Nikita Sharma's blog - Deep Learning on multi-label text classification with FastAi](https://medium.com/@nikkisharma536/deep-learning-on-multi-label-text-classification-with-fastai-d5495d66ed88)
 * [SageMaker PyTorch Container](https://github.com/aws/sagemaker-pytorch-container) 
 * [SageMaker PyTorch Estimators and Models](https://github.com/aws/sagemaker-python-sdk/tree/f14d86ca3abae405c16daf124e1920018c319683/src/sagemaker/pytorch#pytorch-estimators) 
-* []() 
-* []() 
-* []() 
-* []() 
+
 
 
 
