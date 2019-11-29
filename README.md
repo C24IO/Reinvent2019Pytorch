@@ -1,21 +1,33 @@
-# Reinvent2019Pytorch
+# AIM402 - [REPEAT] Deep learning with PyTorch
 
-## Build, Test, and Tune Machine Learning Models with PyTorch
+## Build, Test, and Tune Machine Learning Models with PyTorch & Amazon SageMaker
 
 ![](./img/SMPT.png)
 
-PyTorch is a deep learning framework that is becoming popular especially for rapid prototyping of new models. You can get started easily with PyTorch using Amazon SageMaker, a fully managed service to build, train, and deploy machine learning models at scale. In this workshop, we build a natural language processing model to analyze text. 
+PyTorch is a deep learning framework that is becoming popular especially for 
+rapid prototyping of new models. You can get started easily with PyTorch 
+using Amazon SageMaker, a fully managed service to build, train, and deploy machine learning models at scale. 
+In this workshop, we build a few natural language processing models to analyze & generate text. 
 
 NLP solutions based on PyTroch have several principle components, text preprocessing, text representation using techniques such 
 as GloVe: Global Vectors for Word Representation, state of the art general purpose, pre-trained models such as 
 Bidirectional Encoder Representations from Transformers or BERT. 
-In addition to these principle components, we need to plan for a full end-to-end model training and deployment lifecycle. 
-This lab aims to prepare you for developing end-to-end NLP solutions using [PyTorch](pytorch.org) for the principle components 
-and [Amazon SageMaker](https://aws.amazon.com/sagemaker/) for the full Machine Learning Lifecycle.
 
-Each lab is independent so you can pickup each as your own choosing. We will be going through this serially to facilitate explanations.
+In addition to these principle components, we need to plan for a full end-to-end model training and deployment lifecycle. 
+
+This set of labs aim to enable to develop end-to-end NLP solutions with [PyTorch](pytorch.org) using  [Amazon SageMaker](https://aws.amazon.com/sagemaker/) 
+for the full Machine Learning Lifecycle. Each lab is independent, but during the presentation we would go sequentially. 
 We wish to thank the authors and code committers of projects listed in the reference section, the labs would not be possible without this 
-excellent material. Pull requests for improvements and additions most welcome.    
+excellent material. 
+
+Pull requests for improvements and additions most welcome.    
+
+### Event Engine for Labs
+
+We are using event engine to setup the infrastructure needed for our labs today, so please follow the instructions to get setup with 
+Event Engine first and then come back to this repo.
+
+![](./img/EE.png)
    
 ### To run this workshop locally on your laptop -
 
