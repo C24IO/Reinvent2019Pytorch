@@ -27,9 +27,10 @@ On the Create notebook instance page, provide the following information (if a fi
 1. Once JupyterLab is launched, Goto File->New->Terminal
    1. Once in the terminal do - `cd SageMaker/`
    1. And clone the workshop git in this notebook - `git clone https://github.com/C24IO/Reinvent2019Pytorch.git`
-   1. The lab contents should appear in the left hand side navigation bar, please proceed working through the instructions. 
+   1. The lab contents should appear in the left hand side navigation bar, please proceed working through the instructions.
    
-
+### Please note: If asked to select a kernel - please select - conda_pytorch_36 everytime.
+   
 _version Nov 29 2019_
 
 
