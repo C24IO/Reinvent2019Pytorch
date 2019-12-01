@@ -1,4 +1,4 @@
-# AIM402 - [REPEAT] Deep learning with PyTorch
+# AIM402 Deep learning with PyTorch
 
 ## Build, Test, and Tune Machine Learning Models with PyTorch & Amazon SageMaker
 

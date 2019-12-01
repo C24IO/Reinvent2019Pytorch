@@ -1,21 +1,33 @@
-# Reinvent2019Pytorch
+# AIM402 Deep learning with PyTorch
 
-## Build, Test, and Tune Machine Learning Models with PyTorch
+## Build, Test, and Tune Machine Learning Models with PyTorch & Amazon SageMaker
 
 ![](./img/SMPT.png)
 
-PyTorch is a deep learning framework that is becoming popular especially for rapid prototyping of new models. You can get started easily with PyTorch using Amazon SageMaker, a fully managed service to build, train, and deploy machine learning models at scale. In this workshop, we build a natural language processing model to analyze text. 
+PyTorch is a deep learning framework that is becoming popular especially for 
+rapid prototyping of new models. You can get started easily with PyTorch 
+using Amazon SageMaker, a fully managed service to build, train, and deploy machine learning models at scale. 
+In this workshop, we build a few natural language processing models to analyze & generate text. 
 
 NLP solutions based on PyTroch have several principle components, text preprocessing, text representation using techniques such 
 as GloVe: Global Vectors for Word Representation, state of the art general purpose, pre-trained models such as 
 Bidirectional Encoder Representations from Transformers or BERT. 
-In addition to these principle components, we need to plan for a full end-to-end model training and deployment lifecycle. 
-This lab aims to prepare you for developing end-to-end NLP solutions using [PyTorch](pytorch.org) for the principle components 
-and [Amazon SageMaker](https://aws.amazon.com/sagemaker/) for the full Machine Learning Lifecycle.
 
-Each lab is independent so you can pickup each as your own choosing. We will be going through this serially to facilitate explanations.
+In addition to these principle components, we need to plan for a full end-to-end model training and deployment lifecycle. 
+
+This set of labs aim to enable to develop end-to-end NLP solutions with [PyTorch](pytorch.org) using  [Amazon SageMaker](https://aws.amazon.com/sagemaker/) 
+for the full Machine Learning Lifecycle. Each lab is independent, but during the presentation we would go sequentially. 
 We wish to thank the authors and code committers of projects listed in the reference section, the labs would not be possible without this 
-excellent material. Pull requests for improvements and additions most welcome.    
+excellent material. 
+
+Pull requests for improvements and additions most welcome.    
+
+### Event Engine for Labs
+
+We are using event engine to setup the infrastructure needed for our labs today, so please follow the instructions to get setup with 
+Event Engine first and then come back to this repo.
+
+![](./img/EE.png)
    
 ### To run this workshop locally on your laptop -
 
@@ -25,6 +37,12 @@ $ ./boot.sh
 $ source venv/bin/activate
 ``` 
 ![](./img/ml-concepts-10.png)
+
+## Note on Notebooks
+
+If asked to select a kernel - please select - conda_pytorch_36 everytime.
+
+![](./img/Select_kernel.png) 
 
 ## Lab 1
 
@@ -59,7 +77,10 @@ gradients method to interpret those predictions.
 
 ## Extras
 
-We have and will continue to add a few extras to this set of labs. *bonus* is a directory that contains some helper scripts. *impatient* contains the solved labs with outputs.
+We have and will continue to add a few extras to this set of labs. *bonus* is a directory that contains some helper scripts. 
+We have also included an alternative way to solve the toxic comments 
+classification challenge using the [The fastai deep learning library](https://github.com/fastai/fastai).
+Also - the folder *impatient* contains the solved labs with outputs.
 
 
 ## References & Source Material
@@ -75,7 +96,13 @@ We have and will continue to add a few extras to this set of labs. *bonus* is a 
 * [Captum - Interpreting text models: IMDB sentiment analysis](https://captum.ai/tutorials/IMDB_TorchText_Interpret)
 * [Ben Trevett's - PyTorch Sentiment Analysis](https://github.com/bentrevett/pytorch-sentiment-analysis)
 * [Large Movie Review Dataset](https://ai.stanford.edu/~amaas/data/sentiment/)
- 
+* [Nikita Sharma's Python notebook using data from Toxic Comment Classification Challenge](https://www.kaggle.com/nikkisharma536/fastai-toxic)
+* [Nikita Sharma's blog - Deep Learning on multi-label text classification with FastAi](https://medium.com/@nikkisharma536/deep-learning-on-multi-label-text-classification-with-fastai-d5495d66ed88)
+* [SageMaker PyTorch Container](https://github.com/aws/sagemaker-pytorch-container) 
+* [SageMaker PyTorch Estimators and Models](https://github.com/aws/sagemaker-python-sdk/tree/f14d86ca3abae405c16daf124e1920018c319683/src/sagemaker/pytorch#pytorch-estimators) 
+
+
+
 
 
 
