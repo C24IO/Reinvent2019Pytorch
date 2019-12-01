@@ -99,7 +99,8 @@ Also - the folder *impatient* contains the solved labs with outputs.
 * [Nikita Sharma's Python notebook using data from Toxic Comment Classification Challenge](https://www.kaggle.com/nikkisharma536/fastai-toxic)
 * [Nikita Sharma's blog - Deep Learning on multi-label text classification with FastAi](https://medium.com/@nikkisharma536/deep-learning-on-multi-label-text-classification-with-fastai-d5495d66ed88)
 * [SageMaker PyTorch Container](https://github.com/aws/sagemaker-pytorch-container) 
-* [SageMaker PyTorch Estimators and Models](https://github.com/aws/sagemaker-python-sdk/tree/f14d86ca3abae405c16daf124e1920018c319683/src/sagemaker/pytorch#pytorch-estimators) 
+* [SageMaker PyTorch Estimators and Models](https://github.com/aws/sagemaker-python-sdk/tree/f14d86ca3abae405c16daf124e1920018c319683/src/sagemaker/pytorch#pytorch-estimators)
+* [Amazon SageMaker Workshop about Using Custom Algorithms](https://sagemaker-workshop.com/custom.html) 
 
 
 
