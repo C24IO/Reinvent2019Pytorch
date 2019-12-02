@@ -32,5 +32,3 @@ On the Create notebook instance page, provide the following information (if a fi
 ### Please note: If asked to select a kernel - please select - conda_pytorch_36 everytime.
    
 _version Nov 29 2019_
-
-
