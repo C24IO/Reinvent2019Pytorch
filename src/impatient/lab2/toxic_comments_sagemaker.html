@@ -13074,9 +13074,232 @@ div#notebook {
   <div tabindex="-1" id="notebook" class="border-box-sizing">
     <div class="container" id="notebook-container">
 
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Multi-label-Text-Classification-using-BERT">Multi-label Text Classification using BERT<a class="anchor-link" href="#Multi-label-Text-Classification-using-BERT">&#182;</a></h1>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>This notebook has been sourced from the following blogs by Kaushal Trivedi <a href="https://medium.com/huggingface/introducing-fastbert-a-simple-deep-learning-library-for-bert-models-89ff763ad384">1</a> <a href="https://medium.com/huggingface/multi-label-text-classification-using-bert-the-mighty-transformer-69714fa3fb3d">2</a> and the associated <a href="https://github.com/kaushaltrivedi/fast-bert">GitHub repos</a>.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Lets understand whats happening here - this is the way we are using SageMaker to fine tune Hugging Face BERT models</p>
+<h2 id="Anatomy-of-a-typical-Amazon-SageMaker-container">Anatomy of a typical Amazon SageMaker container<a class="anchor-link" href="#Anatomy-of-a-typical-Amazon-SageMaker-container">&#182;</a></h2><p><img src="../img/sagemaker-architecture.png" alt="SageMaker Architecture"></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Principle-components-of-the-architecture">Principle components of the architecture<a class="anchor-link" href="#Principle-components-of-the-architecture">&#182;</a></h3><p><em>Container</em> - we start off this lab by building our own container, and using SageMaker Service to train it and deploy the resultant model. I have commented it out because as of Nov 28 2019 the resultant container cannot train properly due to an unmet dependancy. As of this writing I am still debugging it. It takes around 22 mins of clock time to build this container and push it to ECR, from scratch on ml.p2.xlarge.</p>
+<p>Once the container is ready we proceed with the lab.</p>
+
+</div>
+</div>
+</div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[16]:</div>
+<div class="prompt input_prompt">In&nbsp;[1]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="ch">#!../container/build_and_push.sh</span>
+<span class="c1">#We have prebuilt containers and made them available to be pulled in us-east-1 and us-west-2</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Lets-talk-about-the-container-a-bit--">Lets talk about the container a bit -<a class="anchor-link" href="#Lets-talk-about-the-container-a-bit--">&#182;</a></h3><p><a href="https://github.com/awslabs/amazon-sagemaker-examples/tree/master/advanced_functionality/scikit_bring_your_own">This notebook is a bit lean</a> - because most of our code resides in the container - this notebook is sort of an orchastrator -</p>
+<div class="highlight"><pre><span></span>.
+├── container
+│   ├── bert
+│   │   ├── download_pretrained_models.py
+│   │   ├── nginx.conf
+│   │   ├── predictor.py
+│   │   ├── serve
+│   │   ├── train
+│   │   └── wsgi.py
+│   ├── build_and_push.sh
+│   └── Dockerfile_gpu
+</pre></div>
+<p>We have 3 important components in this container -</p>
+<ol>
+<li><strong><a href="http://nginx.org/">nginx</a></strong> is a light-weight layer that handles the incoming HTTP requests and manages the I/O in and out of the container efficiently.</li>
+<li><strong><a href="http://gunicorn.org/">gunicorn</a></strong> is a WSGI pre-forking worker server that runs multiple copies of your application and load balances between them.</li>
+<li><strong><a href="http://flask.pocoo.org/">flask</a></strong> is a simple web framework used in the inference app that you write. It lets you respond to call on the <code>/ping</code> and <code>/invocations</code> endpoints without having to write much 
+Lets talk about each file in turn - </li>
+</ol>
+<ul>
+<li><p><strong>Dockerfile</strong>: The <em>Dockerfile</em> describes how the image is built and what it contains. It is a recipe for your container and gives you tremendous flexibility to construct almost any execution environment you can imagine. Here. we use the Dockerfile to describe a pretty standard python science stack and the simple scripts that we're going to add to it. See the <a href="https://docs.docker.com/engine/reference/builder/" title="The official Dockerfile reference guide">Dockerfile reference</a> for what's possible here.</p>
+</li>
+<li><p><strong>build_and_push.sh</strong>: The script to build the Docker image (using the Dockerfile above) and push it to the <a href="https://aws.amazon.com/ecr/" title="ECR Home Page">Amazon EC2 Container Registry (ECR)</a> so that it can be deployed to SageMaker. Specify the name of the image as the argument to this script. The script will generate a full name for the repository in your account and your configured AWS region. If this ECR repository doesn't exist, the script will create it.</p>
+</li>
+</ul>
+<ul>
+<li><p><strong>download_pretrained_models.py</strong>
+  Going to download the pre-trained BERT models from Hugging Face's repo</p>
+</li>
+<li><p><strong>train</strong>: The main program for training the model. When you build your own algorithm, you'll edit this to include your training code.</p>
+</li>
+<li><strong>serve</strong>: The wrapper that starts the inference server. In most cases, you can use this file as-is.</li>
+<li><strong>wsgi.py</strong>: The start up shell for the individual server workers. This only needs to be changed if you changed where predictor.py is located or is named.</li>
+<li><strong>predictor.py</strong>: The algorithm-specific inference server. This is the file that you modify with your own algorithm's code.</li>
+<li><strong>nginx.conf</strong>: The configuration for the nginx master server that manages the multiple workers.</li>
+</ul>
+<p>Finally,</p>
+<p>When SageMaker starts a container, it will invoke the container with an argument of either <strong>train</strong> or <strong>serve</strong>. We have set this container up so that the argument in treated as the command that the container executes. When training, it will run the <strong>train</strong> program included and, when serving, it will run the <strong>serve</strong> program.</p>
+<p><a href="https://sagemaker-workshop.com/custom/code.html">An excellent workshop dedicated - to this concept &amp; source of this information</a>.</p>
+<p><a href="https://github.com/aws/sagemaker-containers/blob/master/README.rst">An even better source</a></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Dockerfile-dissection">Dockerfile dissection<a class="anchor-link" href="#Dockerfile-dissection">&#182;</a></h3><p>The Dockerfile describes the image that you want to build. You can think of it as describing the complete operating system installation of the system that you want to run. A Docker container running is quite a bit lighter than a full operating system, however, because it takes advantage of Linux on the host machine for the basic operations.</p>
+<p>This Dockerfile is special as we want to access the GPU while training, hence we start off with the Nvidia-Cuda base image</p>
+<div class="highlight"><pre><span></span><span class="n">FROM</span> <span class="n">nvidia</span><span class="o">/</span><span class="n">cuda</span><span class="p">:</span><span class="mf">10.1</span><span class="o">-</span><span class="n">cudnn7</span><span class="o">-</span><span class="n">devel</span><span class="o">-</span><span class="n">ubuntu18</span><span class="o">.</span><span class="mo">04</span>
+<span class="n">ARG</span> <span class="n">ARCH</span><span class="o">=</span><span class="n">gpu</span>
+</pre></div>
+<p>After setting up the necessary packages, we then proceed to download the pre-trained models into this container.</p>
+<div class="highlight"><pre><span></span><span class="n">RUN</span> <span class="n">python</span> <span class="n">download_pretrained_models</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">location_dir</span> <span class="o">./</span><span class="n">pretrained_models</span><span class="o">/</span> <span class="o">--</span><span class="n">models</span> <span class="n">bert</span><span class="o">-</span><span class="n">base</span><span class="o">-</span><span class="n">uncased</span> <span class="n">roberta</span><span class="o">-</span><span class="n">base</span> <span class="n">distilbert</span><span class="o">-</span><span class="n">base</span><span class="o">-</span><span class="n">uncased</span>
+</pre></div>
+<p>Amazon SageMaker invokes the training code by running a version of the following command:</p>
+<div class="highlight"><pre><span></span>docker run &lt;image&gt; train
+</pre></div>
+<p>This means that your Docker image should have an executable file in it that is called train. You will modify this program to implement your training algorithm. This can be in any language that is capable of running inside of the Docker environment, but the most common language options for data scientists include Python, R, Scala, and Java. For our Scikit example, we use Python.</p>
+<p>At runtime, Amazon SageMaker injects the training data from an Amazon S3 location into the container. The training program ideally should produce a model artifact. The artifact is written, inside of the container, then packaged into a compressed tar archive and pushed to an Amazon S3 location by Amazon SageMaker.</p>
+<p>When Amazon SageMaker runs training, your train script is run just like any regular program. A number of files are laid out for your use, under the /opt/ml directory:</p>
+<div class="highlight"><pre><span></span>/opt/ml
+├── input
+│   ├── config
+│   │   ├── hyperparameters.json
+│   │   └── resourceConfig.json
+│   └── data
+│       └── &lt;channel_name&gt;
+│           └── &lt;input data&gt;
+├── model
+│   └── &lt;model files&gt;
+└── output
+    └── failure
+</pre></div>
+<p>Lets take a look at the input path, hyperparameters, config for distributed training, data for training -</p>
+<ul>
+<li><p><strong>/opt/ml/input/config</strong> contains information to control how your program runs. hyperparameters.json is a JSON-formatted dictionary of hyperparameter names to values. These values will always be strings, so you may need to convert them.</p>
+</li>
+<li><p><strong>resourceConfig.json</strong> is a JSON-formatted file that describes the network layout used for distributed training. Since scikit-learn doesn’t support distributed training, we’ll ignore it here.</p>
+</li>
+<li><p><strong>/opt/ml/input/data/<channel_name>/</strong> (for File mode) contains the input data for that channel. The channels are created based on the call to CreateTrainingJob but it’s generally important that channels match what the algorithm expects. The files for each channel will be copied from S3 to this directory, preserving the tree structure indicated by the S3 key structure.</p>
+</li>
+<li><p><strong>/opt/ml/input/data/<channel_name>_<epoch_number></strong> (for Pipe mode) is the pipe for a given epoch. Epochs start at zero and go up by one each time you read them. There is no limit to the number of epochs that you can run, but you must close each pipe before reading the next epoch.</p>
+</li>
+</ul>
+<p>Now this is where the output is directed -</p>
+<ul>
+<li><p><strong>/opt/ml/model</strong>/ is the directory where you write the model that your algorithm generates. Your model can be in any format that you want. It can be a single file or a whole directory tree. SageMaker will package any files in this directory into a compressed tar archive file. This file will be available at the S3 location returned in the DescribeTrainingJob result.</p>
+</li>
+<li><p><strong>/opt/ml/output</strong> is a directory where the algorithm can write a file failure that describes why the job failed. The contents of this file will be returned in the FailureReason field of the DescribeTrainingJob result. For jobs that succeed, there is no reason to write this file as it will be ignored.</p>
+</li>
+</ul>
+<p>More info <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/your-algorithms-training-algo-running-container.html#your-algorithms-training-algo-running-container-dist-training">here](https://github.com/aws/sagemaker-containers/blob/master/README.rst) &amp; ]here</a></p>
+<div class="highlight"><pre><span></span><span class="sb">``</span><span class="err">`</span>
+<span class="sb">``</span><span class="err">`</span><span class="n">python</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Quick-note-on-Distributed-Training-Configuration">Quick note on Distributed Training Configuration<a class="anchor-link" href="#Quick-note-on-Distributed-Training-Configuration">&#182;</a></h3><p>Though we are not using it here, but wanted to mention this -</p>
+<p>If you're performing distributed training with multiple containers, Amazon SageMaker makes information about all containers available in the /opt/ml/input/config/resourceconfig.json file.</p>
+<p>To enable inter-container communication, this JSON file contains information for all containers. Amazon SageMaker makes this file available for both FILE and PIPE mode algorithms. The file provides the following information:</p>
+<ul>
+<li><p>current_host—The name of the current container on the container network. For example, algo-1. Host values can change at any time. Don't write code with specific values for this variable.</p>
+</li>
+<li><p>hosts—The list of names of all containers on the container network, sorted lexicographically. For example, ["algo-1", "algo-2", "algo-3"] for a three-node cluster. Containers can use these names to address other containers on the container network. Host values can change at any time. Don't write code with specific values for these variables.</p>
+</li>
+<li><p>network_interface_name—The name of the network interface that is exposed to your container. For example, containers running the Message Passing Interface (MPI) can use this information to set the network interface name.</p>
+</li>
+<li><p>Do not use the information in /etc/hostname or /etc/hosts because it might be inaccurate.</p>
+</li>
+<li><p>Hostname information may not be immediately available to the algorithm container. We recommend adding a retry policy on hostname resolution operations as nodes become available in the cluster.</p>
+</li>
+</ul>
+<p>The following is an example file on node 1 in a three-node cluster:</p>
+<div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="s2">&quot;current_host&quot;</span><span class="p">:</span> <span class="s2">&quot;algo-1&quot;</span><span class="p">,</span>
+<span class="s2">&quot;hosts&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;algo-1&quot;</span><span class="p">,</span><span class="s2">&quot;algo-2&quot;</span><span class="p">,</span><span class="s2">&quot;algo-3&quot;</span><span class="p">],</span>
+<span class="s2">&quot;network_interface_name&quot;</span><span class="p">:</span><span class="s2">&quot;eth1&quot;</span>
+<span class="p">}</span>
+</pre></div>
+<p><a href="https://aws.amazon.com/blogs/machine-learning/launching-tensorflow-distributed-training-easily-with-horovod-or-parameter-servers-in-amazon-sagemaker/">A helpful blog about distributed training on SageMaker</a> and <a href="https://sagemaker-workshop.com/builtin/parallelized.html">a workshop</a></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Serving-a-model,-hosting-a-model-in-a-container">Serving a model, hosting a model in a container<a class="anchor-link" href="#Serving-a-model,-hosting-a-model-in-a-container">&#182;</a></h3><p>Amazon SageMaker invokes hosting service by running a version of the following command</p>
+<div class="highlight"><pre><span></span>docker run &lt;image&gt; serve
+</pre></div>
+<p>This launches a RESTful API to serve HTTP requests for inference. Again, this can be done in any language or framework that works within the Docker environment.</p>
+<p>In most Amazon SageMaker containers, serve is simply a wrapper that starts the inference server. Furthermore, Amazon SageMaker injects the model artifact produced in training into the container and unarchives it automatically.</p>
+<p>Amazon SageMaker uses two URLs in the container:</p>
+<ul>
+<li><strong>/ping</strong> will receive GET requests from the infrastructure. Your program returns 200 if the container is up and accepting requests.</li>
+<li><strong>/invocations</strong> is the endpoint that receives client inference POST requests. The format of the request and the response is up to the algorithm. If the client supplied ContentType and Accept headers, these will be passed in as well.</li>
+</ul>
+<h3 id="About-pushing-this-image-to-ECR">About pushing this image to ECR<a class="anchor-link" href="#About-pushing-this-image-to-ECR">&#182;</a></h3><p><strong>Amazon SageMaker currently requires Docker images to reside in Amazon ECR</strong></p>
+<p>We see these commands in <strong>build_and_push.sh</strong></p>
+<p>For SageMaker to run a container for training or hosting, it needs to be able to find the image hosted in the image repository, Amazon Elastic Container Registry (Amazon ECR). The three main steps to this process are building locally, tagging with the repository location, and pushing the image to the repository.</p>
+<p>To build the local image, call the following command:</p>
+<div class="highlight"><pre><span></span>docker build &lt;image name&gt;
+</pre></div>
+<p>This takes instructions from the Dockerfile we discussed earlier to generate an image on your local instance. After the image is built, we need to let our local instance of Docker know where to store the image so that SageMaker can find it. We do this by tagging the image with the following command:</p>
+<div class="highlight"><pre><span></span>docker tag &lt;image name&gt; &lt;repository name&gt;
+</pre></div>
+<p>The repository name has the following structure:</p>
+<div class="highlight"><pre><span></span>&lt;account number&gt;.dkr.ecr.&lt;region&gt;.amazonaws.com/&lt;image name&gt;:&lt;tag&gt;
+</pre></div>
+<p>Without tagging the image with the repository name, Docker defaults to uploading to Docker Hub, and not Amazon ECR. Amazon SageMaker currently requires Docker images to reside in Amazon ECR. To push an image to ECR, and not the central Docker registry, you must tag it with the registry hostname.</p>
+<p>Unlike Docker Hub, Amazon ECR images are private by default, which is a good practice with Amazon SageMaker. If you want to share your Amazon SageMaker images publicly, you can find more information in the Amazon ECR User Guide.</p>
+<p>Finally, to upload the image to Amazon ECR, with the Region set in the repository name tag, call the following command:</p>
+<div class="highlight"><pre><span></span>docker push &lt;repository name&gt;
+</pre></div>
+<p>One final note on Amazon SageMaker Docker containers. We have already shown you that you have the option to build one Docker container serving both training and hosting, or you can build one for each. While building two Docker images can increase storage requirements and cost due to duplicated common libraries, you might get a benefit from building a significantly smaller inference container, allowing the hosting service to scale more quickly when reacting to traffic increases. This is especially common when you use GPUs for training, but your inference code is optimized for CPUs. You need to consider the tradeoffs when you decide if you want to build a single container or two.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Now-that-we-have-uploaded-the-container-to-ECR,-lets-use-it-to-fine-tune-BERT">Now that we have uploaded the container to ECR, lets use it to fine-tune BERT<a class="anchor-link" href="#Now-that-we-have-uploaded-the-container-to-ECR,-lets-use-it-to-fine-tune-BERT">&#182;</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">sagemaker</span>
@@ -13094,7 +13317,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[2]:</div>
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">role</span> <span class="o">=</span> <span class="n">sagemaker</span><span class="o">.</span><span class="n">get_execution_role</span><span class="p">()</span>
@@ -13115,10 +13338,14 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># location for train.csv, val.csv and labels.csv</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Source of this data is - [Kaggle Competetion - Toxic Comment Classification Challenge](https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge)</span>
+<span class="c1"># Please note - I am not providing the full data-set here, this data set is severly truncated, I would encourage</span>
+<span class="c1"># If you want better results, please do signup for the competetion and use the real dataset. </span>
+
+<span class="c1"># location for train.csv, val.csv and labels.csv</span>
 <span class="n">DATA_PATH</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;../sm-data/&quot;</span><span class="p">)</span>   
 
 <span class="c1"># Location for storing training_config.json</span>
@@ -13142,7 +13369,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span>aws s3 mb s3://<span class="o">{</span>bucket<span class="o">}</span>
@@ -13162,7 +13389,7 @@ div#notebook {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>make_bucket: toxic-pytorch-sagemaker-43039
+<pre>make_bucket: toxic-pytorch-sagemaker-83546
 </pre>
 </div>
 </div>
@@ -13180,7 +13407,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">hyperparameters</span> <span class="o">=</span> <span class="p">{</span>
@@ -13199,9 +13426,33 @@ div#notebook {
 </div>
 
 </div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Hyperparameters">Hyperparameters<a class="anchor-link" href="#Hyperparameters">&#182;</a></h3><ul>
+<li><strong>epochs</strong> - One Epoch is when an ENTIRE dataset is passed forward and backward through the neural network only ONCE.</li>
+<li><strong>lr</strong> - Learning rate - step size to adjust the weights for minimizing the loss function. </li>
+<li><strong>max_seq_length</strong> - Maximum Sequence Length - Maximum number of tokens to input.  </li>
+<li><strong>train_batch_size</strong> - The default is 32, but here its 16. For training we make a parallel reading and shuffle. </li>
+<li><strong>lr_schedule</strong> - The convergence rate and final performance of common deep learning models have significantly benefited from recently proposed heuristics such as learning rate schedules. Using too large learning rate may result in numerical instability especially at the very beginning of the training, where parameters are randomly initialized. The warmup strategy increases the learning rate from 0 to the initial learning rate linearly during the initial N epochs or m batches. After the learning rate warmup stage described earlier, we typically steadily decrease its value from the initial learning rate.  Compared to some widely used strategies including exponential decay and step decay, the cosine decay decreases the learning rate slowly at the beginning, and then becomes almost linear decreasing in the middle, and slows down again at the end. It potentially improves the training progress.</li>
+<li><strong>warmup_steps</strong> - Number of warmup steps. </li>
+<li><strong>optimizer_type</strong> - Here we are choosing Adam, which chooses a diffrent learning rate for each parameter. Helps in speeding up training. AdamW is Adam with L2 regularization and Weight Decay. </li>
+</ul>
+<h4 id="References---source-of-above-statements">References - source of above statements<a class="anchor-link" href="#References---source-of-above-statements">&#182;</a></h4><ul>
+<li><a href="https://towardsdatascience.com/epoch-vs-iterations-vs-batch-size-4dfb9c7ce9c9">Epochs</a></li>
+<li><a href="https://www.deeplearningwizard.com/deep_learning/boosting_models_pytorch/lr_scheduling/">Learning Rate Scheduling</a></li>
+<li><a href="https://openreview.net/forum?id=r14EOsCqKX">A Closer Look at Deep Learning Heuristics: Learning rate restarts, Warmup and Distillation</a></li>
+<li><a href="https://www.dlology.com/blog/bag-of-tricks-for-image-classification-with-convolutional-neural-networks-in-keras/">Bag of Tricks for Image Classification</a></li>
+<li><a href="https://www.fast.ai/2018/07/02/adam-weight-decay/">AdamW and Super-convergence is now the fastest way to train neural nets</a></li>
+<li><a href="https://towardsdatascience.com/why-adamw-matters-736223f31b5d">Why AdamW matters</a></li>
+</ul>
+
+</div>
+</div>
+</div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">training_config</span> <span class="o">=</span> <span class="p">{</span>
@@ -13234,13 +13485,52 @@ div#notebook {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Training-config">Training config<a class="anchor-link" href="#Training-config">&#182;</a></h3><p>Hyperparameters and this training config is consumed in <strong>train</strong> file inside of the container. Like so -</p>
+<div class="highlight"><pre><span></span><span class="nv">hyperparam_path</span> <span class="o">=</span> os.path.join<span class="o">(</span>
+    prefix, <span class="s2">&quot;input/config/hyperparameters.json&quot;</span>
+<span class="o">)</span>  <span class="c1"># opt/ml/input/config/hyperparameters.json</span>
+<span class="nv">config_path</span> <span class="o">=</span> os.path.join<span class="o">(</span>
+    training_config_path, <span class="s2">&quot;training_config.json&quot;</span>
+<span class="o">)</span>  <span class="c1"># opt/ml/input/data/training/config/training_config.json</span>
+</pre></div>
+<ul>
+<li><strong>run_text</strong> - Used for tagging and debugging, logging.</li>
+<li><strong>finetuned_model</strong> - Location of an already fine-tuned model. </li>
+<li><strong>do_lower_case</strong> - Because we are using an uncased model.</li>
+<li><strong>train_file</strong> - name of the train dataset</li>
+<li><strong>val_file</strong> - name of the validation dataset</li>
+<li><strong>label_file</strong> - file where labels are stored.</li>
+<li><strong>text_col</strong> - column where comment text are stored</li>
+<li><strong>label_col</strong> - labels of columns</li>
+<li><strong>multi_label</strong> - We want to do multi-label classification</li>
+<li><strong>grad_accumulation_steps</strong> - Gradient Accumulation If you have small GPUs, you may need to use the gradient accumulation to make training stable. </li>
+<li><strong>fp16_opt_level</strong> - O1 (Conservative Mixed Precision): only some whitelist ops are done in FP16. By switching to 16-bit, we’ll be using half the memory and theoretically less computation at the expense of the available number range and precision. However, pure 16-bit training creates a lot of problems for us (imprecise weight updates, gradient underflow and overflow). Mixed precision training alleviate these problems.</li>
+<li><strong>fp16</strong> - Enabled for the above</li>
+<li><strong>model_type</strong> - RoBERTa. Introduced at Facebook, Robustly optimized BERT approach RoBERTa, is a retraining of BERT with improved training methodology, 1000% more data and compute power.</li>
+<li><strong>model_name</strong> - RoBERTa: A Robustly Optimized BERT Pretraining Approach - 12-layer, 768-hidden, 12-heads, 125M parameters RoBERTa using the BERT-base architecture</li>
+<li><strong>logging_steps</strong> - Control logging granularity</li>
+</ul>
+<h4 id="References---source-of-above-statements">References - source of above statements<a class="anchor-link" href="#References---source-of-above-statements">&#182;</a></h4><ul>
+<li><a href="https://awesomeopensource.com/project/namisan/mt-dnn">Multi-Task Deep Neural Networks for Natural Language Understanding</a></li>
+<li><a href="https://medium.com/huggingface/training-larger-batches-practical-tips-on-1-gpu-multi-gpu-distributed-setups-ec88c3e51255">Training Neural Nets on Larger Batches: Practical Tips for 1-GPU, Multi-GPU &amp; Distributed setups</a></li>
+<li><a href="https://medium.com/the-artificial-impostor/use-nvidia-apex-for-easy-mixed-precision-training-in-pytorch-46841c6eed8c">Use NVIDIA Apex for Easy Mixed Precision Training in PyTorch</a></li>
+<li><a href="https://towardsdatascience.com/bert-roberta-distilbert-xlnet-which-one-to-use-3d5ab82ba5f8">BERT, RoBERTa, DistilBERT, XLNet — which one to use?</a></li>
+<li><a href="https://github.com/pytorch/fairseq/tree/master/examples/roberta">RoBERTa: A Robustly Optimized BERT Pretraining Approach</a></li>
+</ul>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Upload-Data">Upload Data<a class="anchor-link" href="#Upload-Data">&#182;</a></h2>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[7]:</div>
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># This is a helper feature to upload data</span>
@@ -13261,46 +13551,13 @@ div#notebook {
 
 <div class="output_area">
 
-    <div class="prompt output_prompt">Out[7]:</div>
-
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>&#39;s3://toxic-pytorch-sagemaker-43039/toxic_comments/input/val.csv&#39;</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[8]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">session</span><span class="o">.</span><span class="n">upload_data</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">DATA_PATH</span><span class="o">/</span><span class="s1">&#39;labels.csv&#39;</span><span class="p">),</span> <span class="n">bucket</span><span class="o">=</span><span class="n">bucket</span> <span class="p">,</span> <span class="n">key_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">)</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
     <div class="prompt output_prompt">Out[8]:</div>
 
 
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>&#39;s3://toxic-pytorch-sagemaker-43039/toxic_comments/input/labels.csv&#39;</pre>
+<pre>&#39;s3://toxic-pytorch-sagemaker-83546/toxic_comments/input/val.csv&#39;</pre>
 </div>
 
 </div>
@@ -13314,7 +13571,7 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[9]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">session</span><span class="o">.</span><span class="n">upload_data</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">DATA_PATH</span><span class="o">/</span><span class="s1">&#39;train.csv&#39;</span><span class="p">),</span> <span class="n">bucket</span><span class="o">=</span><span class="n">bucket</span> <span class="p">,</span> <span class="n">key_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">session</span><span class="o">.</span><span class="n">upload_data</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">DATA_PATH</span><span class="o">/</span><span class="s1">&#39;labels.csv&#39;</span><span class="p">),</span> <span class="n">bucket</span><span class="o">=</span><span class="n">bucket</span> <span class="p">,</span> <span class="n">key_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">)</span>
 </pre></div>
 
     </div>
@@ -13333,7 +13590,40 @@ div#notebook {
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>&#39;s3://toxic-pytorch-sagemaker-43039/toxic_comments/input/train.csv&#39;</pre>
+<pre>&#39;s3://toxic-pytorch-sagemaker-83546/toxic_comments/input/labels.csv&#39;</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">session</span><span class="o">.</span><span class="n">upload_data</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">DATA_PATH</span><span class="o">/</span><span class="s1">&#39;train.csv&#39;</span><span class="p">),</span> <span class="n">bucket</span><span class="o">=</span><span class="n">bucket</span> <span class="p">,</span> <span class="n">key_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[10]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>&#39;s3://toxic-pytorch-sagemaker-83546/toxic_comments/input/train.csv&#39;</pre>
 </div>
 
 </div>
@@ -13351,7 +13641,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[18]:</div>
+<div class="prompt input_prompt">In&nbsp;[11]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span>aws configure get region
@@ -13382,7 +13672,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="prompt input_prompt">In&nbsp;[12]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#account = session.boto_session.client(&#39;sts&#39;).get_caller_identity()[&#39;Account&#39;]</span>
@@ -13395,7 +13685,6 @@ div#notebook {
 <span class="c1">#US West 2 - 111652037296.dkr.ecr.us-east-1.amazonaws.com/chazarey-sagemaker-fast-bert-copied:1.0-gpu-py36</span>
 
 <span class="n">image</span> <span class="o">=</span> <span class="s2">&quot;111652037296.dkr.ecr.us-west-2.amazonaws.com/chazarey-sagemaker-fast-bert:1.0-gpu-py36&quot;</span>
-<span class="c1">#TODO Convert this to using SM Pytorch </span>
 </pre></div>
 
     </div>
@@ -13405,7 +13694,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[11]:</div>
+<div class="prompt input_prompt">In&nbsp;[13]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">output_path</span> <span class="o">=</span> <span class="s2">&quot;s3://</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">prefix_output</span><span class="p">)</span>
@@ -13418,7 +13707,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[12]:</div>
+<div class="prompt input_prompt">In&nbsp;[14]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">estimator</span> <span class="o">=</span> <span class="n">sagemaker</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">Estimator</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> 
@@ -13437,9 +13726,27 @@ div#notebook {
 </div>
 
 </div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>So now we bring everything together and ask SageMaker to train our container, finetune our BERT</p>
+<ul>
+<li><strong>image</strong> - image_name (str) – The container image to use for training.</li>
+<li><strong>role</strong> - role = sagemaker.get_execution_role() - we got this before, An AWS IAM role (either name or full ARN). The Amazon SageMaker training jobs and APIs that create Amazon SageMaker endpoints use this role to access training data and model artifacts. After the endpoint is created, the inference code might use the IAM role, if it needs to access an AWS resource.</li>
+<li><strong>train_instance_count</strong> - train_instance_count (int) – Number of Amazon EC2 instances to use for training.</li>
+<li><strong>train_instance_type</strong> - train_instance_type (str) – Type of EC2 instance to use for training, for example, ‘ml.c4.xlarge’.</li>
+<li><strong>output_path</strong> - output_path (str) – S3 location for saving the training result (model artifacts and output files). If not specified, results are stored to a default bucket. If the bucket with the specific name does not exist, the estimator creates the bucket during the fit() method execution.</li>
+<li><strong>base_job_name</strong> - base_job_name (str) – Prefix for training job name when the fit() method launches. If not specified, the estimator generates a default job name, based on the training image name and current timestamp.</li>
+<li><strong>hyperparameters</strong> - hyperparameters (dict) – Dictionary containing the hyperparameters to initialize this estimator with. We set this up in the previous cells</li>
+<li><strong>sagemaker_session</strong> - sagemaker_session (sagemaker.session.Session) – Session object which manages interactions with Amazon SageMaker APIs and any other AWS services needed. If not specified, the estimator creates one using the default AWS configuration chain.</li>
+</ul>
+
+</div>
+</div>
+</div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[13]:</div>
+<div class="prompt input_prompt">In&nbsp;[15]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">s3_input</span><span class="p">)</span>
@@ -13459,36 +13766,35 @@ div#notebook {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>2019-11-28 16:36:25 Starting - Starting the training job...
-2019-11-28 16:36:26 Starting - Launching requested ML instances......
-2019-11-28 16:37:52 Starting - Preparing the instances for training......
-2019-11-28 16:38:55 Downloading - Downloading input data...
-2019-11-28 16:39:07 Training - Downloading the training image............
-2019-11-28 16:41:15 Training - Training image download completed. Training in progress..<span class="ansi-red-fg">Starting the training.</span>
+<pre>2019-12-02 04:23:12 Starting - Starting the training job...
+2019-12-02 04:23:13 Starting - Launching requested ML instances...
+2019-12-02 04:24:12 Starting - Preparing the instances for training......
+2019-12-02 04:25:05 Downloading - Downloading input data......
+2019-12-02 04:26:11 Training - Downloading the training image..............<span class="ansi-red-fg">Starting the training.</span>
 <span class="ansi-red-fg">/opt/ml/input/data/training/config/training_config.json</span>
 <span class="ansi-red-fg">{&#39;run_text&#39;: &#39;toxic comments&#39;, &#39;finetuned_model&#39;: None, &#39;do_lower_case&#39;: &#39;True&#39;, &#39;train_file&#39;: &#39;train.csv&#39;, &#39;val_file&#39;: &#39;val.csv&#39;, &#39;label_file&#39;: &#39;labels.csv&#39;, &#39;text_col&#39;: &#39;comment_text&#39;, &#39;label_col&#39;: &#39;[&#34;toxic&#34;, &#34;severe_toxic&#34;, &#34;obscene&#34;, &#34;threat&#34;, &#34;insult&#34;, &#34;identity_hate&#34;]&#39;, &#39;multi_label&#39;: &#39;True&#39;, &#39;grad_accumulation_steps&#39;: &#39;1&#39;, &#39;fp16_opt_level&#39;: &#39;O1&#39;, &#39;fp16&#39;: &#39;True&#39;, &#39;model_type&#39;: &#39;roberta&#39;, &#39;model_name&#39;: &#39;roberta-base&#39;, &#39;logging_steps&#39;: &#39;300&#39;}</span>
 <span class="ansi-red-fg">{&#39;train_batch_size&#39;: &#39;16&#39;, &#39;warmup_steps&#39;: &#39;1000&#39;, &#39;lr&#39;: &#39;8e-05&#39;, &#39;max_seq_length&#39;: &#39;512&#39;, &#39;optimizer_type&#39;: &#39;adamw&#39;, &#39;lr_schedule&#39;: &#39;warmup_cosine&#39;, &#39;epochs&#39;: &#39;10&#39;}</span>
-<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - root -   model path used /opt/ml/code/pretrained_models/roberta-base</span>
-<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - root -   finetuned model not available - loading standard pretrained model</span>
-<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - transformers.tokenization_utils -   Model name &#39;/opt/ml/code/pretrained_models/roberta-base&#39; not found in model shortcut name list (roberta-base, roberta-large, roberta-large-mnli). Assuming &#39;/opt/ml/code/pretrained_models/roberta-base&#39; is a path or url to a directory containing tokenizer files.</span>
-<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - transformers.tokenization_utils -   Didn&#39;t find file /opt/ml/code/pretrained_models/roberta-base/added_tokens.json. We won&#39;t load it.</span>
-<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - transformers.tokenization_utils -   Didn&#39;t find file /opt/ml/code/pretrained_models/roberta-base/special_tokens_map.json. We won&#39;t load it.</span>
-<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - transformers.tokenization_utils -   Didn&#39;t find file /opt/ml/code/pretrained_models/roberta-base/tokenizer_config.json. We won&#39;t load it.</span>
-<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - transformers.tokenization_utils -   loading file /opt/ml/code/pretrained_models/roberta-base/vocab.json</span>
-<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - transformers.tokenization_utils -   loading file /opt/ml/code/pretrained_models/roberta-base/merges.txt</span>
-<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - transformers.tokenization_utils -   loading file None</span>
-<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - transformers.tokenization_utils -   loading file None</span>
-<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - transformers.tokenization_utils -   loading file None</span>
-<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - root -   Number of GPUs: 4</span>
-<span class="ansi-red-fg">11/28/2019 16:41:19 - INFO - root -   label columns: [&#39;toxic&#39;, &#39;severe_toxic&#39;, &#39;obscene&#39;, &#39;threat&#39;, &#39;insult&#39;, &#39;identity_hate&#39;]</span>
-<span class="ansi-red-fg">11/28/2019 16:41:20 - INFO - root -   Writing example 0 of 1000</span>
-<span class="ansi-red-fg">11/28/2019 16:41:21 - INFO - root -   Saving features into cached file /opt/ml/input/data/training/cache/cached_roberta_train_multi_label_512</span>
-<span class="ansi-red-fg">11/28/2019 16:41:22 - INFO - root -   Writing example 0 of 1000</span>
-<span class="ansi-red-fg">11/28/2019 16:41:23 - INFO - root -   Saving features into cached file /opt/ml/input/data/training/cache/cached_roberta_dev_multi_label_512</span>
-<span class="ansi-red-fg">11/28/2019 16:41:24 - INFO - root -   databunch labels: 6</span>
-<span class="ansi-red-fg">11/28/2019 16:41:24 - INFO - root -   multilabel: True, multilabel type: &lt;class &#39;bool&#39;&gt;</span>
-<span class="ansi-red-fg">11/28/2019 16:41:24 - INFO - transformers.configuration_utils -   loading configuration file /opt/ml/code/pretrained_models/roberta-base/config.json</span>
-<span class="ansi-red-fg">11/28/2019 16:41:24 - INFO - transformers.configuration_utils -   Model config {
+<span class="ansi-red-fg">12/02/2019 04:28:22 - INFO - root -   model path used /opt/ml/code/pretrained_models/roberta-base</span>
+<span class="ansi-red-fg">12/02/2019 04:28:22 - INFO - root -   finetuned model not available - loading standard pretrained model</span>
+<span class="ansi-red-fg">12/02/2019 04:28:22 - INFO - transformers.tokenization_utils -   Model name &#39;/opt/ml/code/pretrained_models/roberta-base&#39; not found in model shortcut name list (roberta-base, roberta-large, roberta-large-mnli). Assuming &#39;/opt/ml/code/pretrained_models/roberta-base&#39; is a path or url to a directory containing tokenizer files.</span>
+<span class="ansi-red-fg">12/02/2019 04:28:22 - INFO - transformers.tokenization_utils -   Didn&#39;t find file /opt/ml/code/pretrained_models/roberta-base/added_tokens.json. We won&#39;t load it.</span>
+<span class="ansi-red-fg">12/02/2019 04:28:22 - INFO - transformers.tokenization_utils -   Didn&#39;t find file /opt/ml/code/pretrained_models/roberta-base/special_tokens_map.json. We won&#39;t load it.</span>
+<span class="ansi-red-fg">12/02/2019 04:28:22 - INFO - transformers.tokenization_utils -   Didn&#39;t find file /opt/ml/code/pretrained_models/roberta-base/tokenizer_config.json. We won&#39;t load it.</span>
+<span class="ansi-red-fg">12/02/2019 04:28:22 - INFO - transformers.tokenization_utils -   loading file /opt/ml/code/pretrained_models/roberta-base/vocab.json</span>
+<span class="ansi-red-fg">12/02/2019 04:28:22 - INFO - transformers.tokenization_utils -   loading file /opt/ml/code/pretrained_models/roberta-base/merges.txt</span>
+<span class="ansi-red-fg">12/02/2019 04:28:22 - INFO - transformers.tokenization_utils -   loading file None</span>
+<span class="ansi-red-fg">12/02/2019 04:28:22 - INFO - transformers.tokenization_utils -   loading file None</span>
+<span class="ansi-red-fg">12/02/2019 04:28:22 - INFO - transformers.tokenization_utils -   loading file None</span>
+<span class="ansi-red-fg">12/02/2019 04:28:22 - INFO - root -   Number of GPUs: 4</span>
+<span class="ansi-red-fg">12/02/2019 04:28:22 - INFO - root -   label columns: [&#39;toxic&#39;, &#39;severe_toxic&#39;, &#39;obscene&#39;, &#39;threat&#39;, &#39;insult&#39;, &#39;identity_hate&#39;]</span>
+<span class="ansi-red-fg">12/02/2019 04:28:23 - INFO - root -   Writing example 0 of 1000</span>
+<span class="ansi-red-fg">12/02/2019 04:28:24 - INFO - root -   Saving features into cached file /opt/ml/input/data/training/cache/cached_roberta_train_multi_label_512</span>
+<span class="ansi-red-fg">12/02/2019 04:28:25 - INFO - root -   Writing example 0 of 1000</span>
+<span class="ansi-red-fg">12/02/2019 04:28:26 - INFO - root -   Saving features into cached file /opt/ml/input/data/training/cache/cached_roberta_dev_multi_label_512</span>
+<span class="ansi-red-fg">12/02/2019 04:28:27 - INFO - root -   databunch labels: 6</span>
+<span class="ansi-red-fg">12/02/2019 04:28:27 - INFO - root -   multilabel: True, multilabel type: &lt;class &#39;bool&#39;&gt;</span>
+<span class="ansi-red-fg">12/02/2019 04:28:27 - INFO - transformers.configuration_utils -   loading configuration file /opt/ml/code/pretrained_models/roberta-base/config.json</span>
+<span class="ansi-red-fg">12/02/2019 04:28:27 - INFO - transformers.configuration_utils -   Model config {
   &#34;attention_probs_dropout_prob&#34;: 0.1,
   &#34;finetuning_task&#34;: null,
   &#34;hidden_act&#34;: &#34;gelu&#34;,
@@ -13511,9 +13817,10 @@ div#notebook {
   &#34;vocab_size&#34;: 50265</span>
 <span class="ansi-red-fg">}
 </span>
-<span class="ansi-red-fg">11/28/2019 16:41:24 - INFO - transformers.modeling_utils -   loading weights file /opt/ml/code/pretrained_models/roberta-base/pytorch_model.bin</span>
-<span class="ansi-red-fg">11/28/2019 16:41:30 - INFO - transformers.modeling_utils -   Weights of RobertaForMultiLabelSequenceClassification not initialized from pretrained model: [&#39;classifier.dense.weight&#39;, &#39;classifier.dense.bias&#39;, &#39;classifier.out_proj.weight&#39;, &#39;classifier.out_proj.bias&#39;]</span>
-<span class="ansi-red-fg">11/28/2019 16:41:30 - INFO - transformers.modeling_utils -   Weights from pretrained model not used in RobertaForMultiLabelSequenceClassification: [&#39;lm_head.bias&#39;, &#39;lm_head.dense.weight&#39;, &#39;lm_head.dense.bias&#39;, &#39;lm_head.layer_norm.weight&#39;, &#39;lm_head.layer_norm.bias&#39;, &#39;lm_head.decoder.weight&#39;]</span>
+<span class="ansi-red-fg">12/02/2019 04:28:27 - INFO - transformers.modeling_utils -   loading weights file /opt/ml/code/pretrained_models/roberta-base/pytorch_model.bin</span>
+
+2019-12-02 04:28:19 Training - Training image download completed. Training in progress.<span class="ansi-red-fg">12/02/2019 04:28:33 - INFO - transformers.modeling_utils -   Weights of RobertaForMultiLabelSequenceClassification not initialized from pretrained model: [&#39;classifier.dense.weight&#39;, &#39;classifier.dense.bias&#39;, &#39;classifier.out_proj.weight&#39;, &#39;classifier.out_proj.bias&#39;]</span>
+<span class="ansi-red-fg">12/02/2019 04:28:33 - INFO - transformers.modeling_utils -   Weights from pretrained model not used in RobertaForMultiLabelSequenceClassification: [&#39;lm_head.bias&#39;, &#39;lm_head.dense.weight&#39;, &#39;lm_head.dense.bias&#39;, &#39;lm_head.layer_norm.weight&#39;, &#39;lm_head.layer_norm.bias&#39;, &#39;lm_head.decoder.weight&#39;]</span>
 <span class="ansi-red-fg">/opt/ml/model/tensorboard</span>
 <span class="ansi-red-fg">Selected optimization level O1:  Insert automatic casts around Pytorch functions and Tensor methods.
 </span>
@@ -13534,131 +13841,131 @@ div#notebook {
 <span class="ansi-red-fg">keep_batchnorm_fp32    : None</span>
 <span class="ansi-red-fg">master_weights         : None</span>
 <span class="ansi-red-fg">loss_scale             : dynamic</span>
-<span class="ansi-red-fg">11/28/2019 16:41:37 - INFO - root -   ***** Running training *****</span>
-<span class="ansi-red-fg">11/28/2019 16:41:37 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/28/2019 16:41:37 - INFO - root -     Num Epochs = 10</span>
-<span class="ansi-red-fg">11/28/2019 16:41:37 - INFO - root -     Total train batch size (w. parallel, distributed &amp; accumulation) = 64</span>
-<span class="ansi-red-fg">11/28/2019 16:41:37 - INFO - root -     Gradient Accumulation steps = 1</span>
-<span class="ansi-red-fg">11/28/2019 16:41:37 - INFO - root -     Total optimization steps = 160</span>
+<span class="ansi-red-fg">12/02/2019 04:28:39 - INFO - root -   ***** Running training *****</span>
+<span class="ansi-red-fg">12/02/2019 04:28:39 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">12/02/2019 04:28:39 - INFO - root -     Num Epochs = 10</span>
+<span class="ansi-red-fg">12/02/2019 04:28:39 - INFO - root -     Total train batch size (w. parallel, distributed &amp; accumulation) = 64</span>
+<span class="ansi-red-fg">12/02/2019 04:28:39 - INFO - root -     Gradient Accumulation steps = 1</span>
+<span class="ansi-red-fg">12/02/2019 04:28:39 - INFO - root -     Total optimization steps = 160</span>
 <span class="ansi-red-fg">/usr/local/lib/python3.7/dist-packages/torch/nn/parallel/_functions.py:61: UserWarning: Was asked to gather along dimension 0, but all input tensors were scalars; will instead unsqueeze and return a vector.
   warnings.warn(&#39;Was asked to gather along dimension 0, but all &#39;</span>
-<span class="ansi-red-fg">11/28/2019 16:41:59 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/28/2019 16:41:59 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/28/2019 16:41:59 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/28/2019 16:42:01 - INFO - root -   eval_loss after epoch 1: 0.7195036858320236: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:01 - INFO - root -   eval_accuracy_thresh after epoch 1: 0.5139999985694885: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:01 - INFO - root -   eval_roc_auc after epoch 1: 0.5889381231207469: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:01 - INFO - root -   eval_fbeta after epoch 1: 0.05643989518284798: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:01 - INFO - root -   lr after epoch 1: 1.28e-06</span>
-<span class="ansi-red-fg">11/28/2019 16:42:01 - INFO - root -   train_loss after epoch 1: 0.7253432124853134</span>
-<span class="ansi-red-fg">11/28/2019 16:42:01 - INFO - root -   
+<span class="ansi-red-fg">12/02/2019 04:29:01 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">12/02/2019 04:29:01 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">12/02/2019 04:29:01 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">12/02/2019 04:29:03 - INFO - root -   eval_loss after epoch 1: 0.7037041559815407: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:03 - INFO - root -   eval_accuracy_thresh after epoch 1: 0.3569999933242798: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:03 - INFO - root -   eval_roc_auc after epoch 1: 0.4729947236171207: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:03 - INFO - root -   eval_fbeta after epoch 1: 0.05643989518284798: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:03 - INFO - root -   lr after epoch 1: 1.28e-06</span>
+<span class="ansi-red-fg">12/02/2019 04:29:03 - INFO - root -   train_loss after epoch 1: 0.7072519548237324</span>
+<span class="ansi-red-fg">12/02/2019 04:29:03 - INFO - root -   
 </span>
-<span class="ansi-red-fg">11/28/2019 16:42:08 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/28/2019 16:42:08 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/28/2019 16:42:08 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/28/2019 16:42:10 - INFO - root -   eval_loss after epoch 2: 0.694989949464798: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:10 - INFO - root -   eval_accuracy_thresh after epoch 2: 0.5148333311080933: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:10 - INFO - root -   eval_roc_auc after epoch 2: 0.5985553634219678: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:10 - INFO - root -   eval_fbeta after epoch 2: 0.05643989518284798: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:10 - INFO - root -   lr after epoch 2: 2.56e-06</span>
-<span class="ansi-red-fg">11/28/2019 16:42:10 - INFO - root -   train_loss after epoch 2: 0.7070465125143528</span>
-<span class="ansi-red-fg">11/28/2019 16:42:10 - INFO - root -   
+<span class="ansi-red-fg">12/02/2019 04:29:10 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">12/02/2019 04:29:10 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">12/02/2019 04:29:10 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">12/02/2019 04:29:12 - INFO - root -   eval_loss after epoch 2: 0.6766092777252197: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:12 - INFO - root -   eval_accuracy_thresh after epoch 2: 0.6316666603088379: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:12 - INFO - root -   eval_roc_auc after epoch 2: 0.5015087096985862: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:12 - INFO - root -   eval_fbeta after epoch 2: 0.05643989518284798: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:12 - INFO - root -   lr after epoch 2: 2.56e-06</span>
+<span class="ansi-red-fg">12/02/2019 04:29:12 - INFO - root -   train_loss after epoch 2: 0.6889606043696404</span>
+<span class="ansi-red-fg">12/02/2019 04:29:12 - INFO - root -   
 </span>
-<span class="ansi-red-fg">11/28/2019 16:42:17 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/28/2019 16:42:17 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/28/2019 16:42:17 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/28/2019 16:42:19 - INFO - root -   eval_loss after epoch 3: 0.6377312615513802: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:19 - INFO - root -   eval_accuracy_thresh after epoch 3: 0.8186666369438171: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:19 - INFO - root -   eval_roc_auc after epoch 3: 0.6453403209059785: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:19 - INFO - root -   eval_fbeta after epoch 3: 0.05643989518284798: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:19 - INFO - root -   lr after epoch 3: 3.8400000000000005e-06</span>
-<span class="ansi-red-fg">11/28/2019 16:42:19 - INFO - root -   train_loss after epoch 3: 0.6663405001163483</span>
-<span class="ansi-red-fg">11/28/2019 16:42:19 - INFO - root -   
+<span class="ansi-red-fg">12/02/2019 04:29:19 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">12/02/2019 04:29:19 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">12/02/2019 04:29:19 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">12/02/2019 04:29:21 - INFO - root -   eval_loss after epoch 3: 0.5915627405047417: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:21 - INFO - root -   eval_accuracy_thresh after epoch 3: 0.9646666646003723: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:21 - INFO - root -   eval_roc_auc after epoch 3: 0.6080611512318637: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:21 - INFO - root -   eval_fbeta after epoch 3: 0.05643989518284798: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:21 - INFO - root -   lr after epoch 3: 3.8400000000000005e-06</span>
+<span class="ansi-red-fg">12/02/2019 04:29:21 - INFO - root -   train_loss after epoch 3: 0.6409198269248009</span>
+<span class="ansi-red-fg">12/02/2019 04:29:21 - INFO - root -   
 </span>
-<span class="ansi-red-fg">11/28/2019 16:42:26 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/28/2019 16:42:26 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/28/2019 16:42:26 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/28/2019 16:42:28 - INFO - root -   eval_loss after epoch 4: 0.31159941107034683: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:28 - INFO - root -   eval_accuracy_thresh after epoch 4: 0.9703333377838135: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:28 - INFO - root -   eval_roc_auc after epoch 4: 0.7275782676326525: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:28 - INFO - root -   eval_fbeta after epoch 4: 0.0067300512455403805: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:28 - INFO - root -   lr after epoch 4: 5.12e-06</span>
-<span class="ansi-red-fg">11/28/2019 16:42:28 - INFO - root -   train_loss after epoch 4: 0.5113550964742899</span>
-<span class="ansi-red-fg">11/28/2019 16:42:28 - INFO - root -   
+<span class="ansi-red-fg">12/02/2019 04:29:28 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">12/02/2019 04:29:28 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">12/02/2019 04:29:28 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">12/02/2019 04:29:29 - INFO - root -   eval_loss after epoch 4: 0.2535830643028021: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:29 - INFO - root -   eval_accuracy_thresh after epoch 4: 0.9703333377838135: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:29 - INFO - root -   eval_roc_auc after epoch 4: 0.7849280528333057: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:29 - INFO - root -   eval_fbeta after epoch 4: 0.0010000000474974513: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:29 - INFO - root -   lr after epoch 4: 5.12e-06</span>
+<span class="ansi-red-fg">12/02/2019 04:29:29 - INFO - root -   train_loss after epoch 4: 0.4361423756927252</span>
+<span class="ansi-red-fg">12/02/2019 04:29:29 - INFO - root -   
 </span>
-<span class="ansi-red-fg">11/28/2019 16:42:35 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/28/2019 16:42:35 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/28/2019 16:42:35 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/28/2019 16:42:37 - INFO - root -   eval_loss after epoch 5: 0.17762534692883492: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:37 - INFO - root -   eval_accuracy_thresh after epoch 5: 0.9703333377838135: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:37 - INFO - root -   eval_roc_auc after epoch 5: 0.7543085313746: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:37 - INFO - root -   eval_fbeta after epoch 5: 0.0: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:37 - INFO - root -   lr after epoch 5: 6.4000000000000006e-06</span>
-<span class="ansi-red-fg">11/28/2019 16:42:37 - INFO - root -   train_loss after epoch 5: 0.2628530152142048</span>
-<span class="ansi-red-fg">11/28/2019 16:42:37 - INFO - root -   
+<span class="ansi-red-fg">12/02/2019 04:29:36 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">12/02/2019 04:29:36 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">12/02/2019 04:29:36 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">12/02/2019 04:29:38 - INFO - root -   eval_loss after epoch 5: 0.16288094595074654: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:38 - INFO - root -   eval_accuracy_thresh after epoch 5: 0.9703333377838135: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:38 - INFO - root -   eval_roc_auc after epoch 5: 0.8020589279717769: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:38 - INFO - root -   eval_fbeta after epoch 5: 0.0: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:38 - INFO - root -   lr after epoch 5: 6.4000000000000006e-06</span>
+<span class="ansi-red-fg">12/02/2019 04:29:38 - INFO - root -   train_loss after epoch 5: 0.23069126624614</span>
+<span class="ansi-red-fg">12/02/2019 04:29:38 - INFO - root -   
 </span>
-<span class="ansi-red-fg">11/28/2019 16:42:44 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/28/2019 16:42:44 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/28/2019 16:42:44 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/28/2019 16:42:45 - INFO - root -   eval_loss after epoch 6: 0.14263706468045712: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:45 - INFO - root -   eval_accuracy_thresh after epoch 6: 0.9703333377838135: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:45 - INFO - root -   eval_roc_auc after epoch 6: 0.8275521173078482: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:45 - INFO - root -   eval_fbeta after epoch 6: 0.0: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:45 - INFO - root -   lr after epoch 6: 7.680000000000001e-06</span>
-<span class="ansi-red-fg">11/28/2019 16:42:45 - INFO - root -   train_loss after epoch 6: 0.18196525005623698</span>
-<span class="ansi-red-fg">11/28/2019 16:42:45 - INFO - root -   
+<span class="ansi-red-fg">12/02/2019 04:29:45 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">12/02/2019 04:29:45 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">12/02/2019 04:29:45 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">12/02/2019 04:29:47 - INFO - root -   eval_loss after epoch 6: 0.13754809647798538: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:47 - INFO - root -   eval_accuracy_thresh after epoch 6: 0.9703333377838135: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:47 - INFO - root -   eval_roc_auc after epoch 6: 0.8324072966160903: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:47 - INFO - root -   eval_fbeta after epoch 6: 0.0: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:47 - INFO - root -   lr after epoch 6: 7.680000000000001e-06</span>
+<span class="ansi-red-fg">12/02/2019 04:29:47 - INFO - root -   train_loss after epoch 6: 0.17248850781470537</span>
+<span class="ansi-red-fg">12/02/2019 04:29:47 - INFO - root -   
 </span>
-<span class="ansi-red-fg">11/28/2019 16:42:52 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/28/2019 16:42:52 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/28/2019 16:42:52 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/28/2019 16:42:54 - INFO - root -   eval_loss after epoch 7: 0.12607838213443756: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:54 - INFO - root -   eval_accuracy_thresh after epoch 7: 0.9703333377838135: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:54 - INFO - root -   eval_roc_auc after epoch 7: 0.8936627437962937: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:54 - INFO - root -   eval_fbeta after epoch 7: 0.0: </span>
-<span class="ansi-red-fg">11/28/2019 16:42:54 - INFO - root -   lr after epoch 7: 8.96e-06</span>
-<span class="ansi-red-fg">11/28/2019 16:42:54 - INFO - root -   train_loss after epoch 7: 0.15724064968526363</span>
-<span class="ansi-red-fg">11/28/2019 16:42:54 - INFO - root -   
+<span class="ansi-red-fg">12/02/2019 04:29:54 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">12/02/2019 04:29:54 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">12/02/2019 04:29:54 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">12/02/2019 04:29:56 - INFO - root -   eval_loss after epoch 7: 0.12308519426733255: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:56 - INFO - root -   eval_accuracy_thresh after epoch 7: 0.9703333377838135: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:56 - INFO - root -   eval_roc_auc after epoch 7: 0.8854577175301742: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:56 - INFO - root -   eval_fbeta after epoch 7: 0.0: </span>
+<span class="ansi-red-fg">12/02/2019 04:29:56 - INFO - root -   lr after epoch 7: 8.96e-06</span>
+<span class="ansi-red-fg">12/02/2019 04:29:56 - INFO - root -   train_loss after epoch 7: 0.1517679439857602</span>
+<span class="ansi-red-fg">12/02/2019 04:29:56 - INFO - root -   
 </span>
-<span class="ansi-red-fg">11/28/2019 16:43:01 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/28/2019 16:43:01 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/28/2019 16:43:01 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/28/2019 16:43:03 - INFO - root -   eval_loss after epoch 8: 0.1037776218727231: </span>
-<span class="ansi-red-fg">11/28/2019 16:43:03 - INFO - root -   eval_accuracy_thresh after epoch 8: 0.9723333120346069: </span>
-<span class="ansi-red-fg">11/28/2019 16:43:03 - INFO - root -   eval_roc_auc after epoch 8: 0.9347028319547319: </span>
-<span class="ansi-red-fg">11/28/2019 16:43:03 - INFO - root -   eval_fbeta after epoch 8: 0.028056392446160316: </span>
-<span class="ansi-red-fg">11/28/2019 16:43:03 - INFO - root -   lr after epoch 8: 1.024e-05</span>
-<span class="ansi-red-fg">11/28/2019 16:43:03 - INFO - root -   train_loss after epoch 8: 0.13030934100970626</span>
-<span class="ansi-red-fg">11/28/2019 16:43:03 - INFO - root -   
+<span class="ansi-red-fg">12/02/2019 04:30:02 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">12/02/2019 04:30:02 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">12/02/2019 04:30:02 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">12/02/2019 04:30:04 - INFO - root -   eval_loss after epoch 8: 0.10620115138590336: </span>
+<span class="ansi-red-fg">12/02/2019 04:30:04 - INFO - root -   eval_accuracy_thresh after epoch 8: 0.9704999923706055: </span>
+<span class="ansi-red-fg">12/02/2019 04:30:04 - INFO - root -   eval_roc_auc after epoch 8: 0.9503568409635672: </span>
+<span class="ansi-red-fg">12/02/2019 04:30:04 - INFO - root -   eval_fbeta after epoch 8: 0.04214746132493019: </span>
+<span class="ansi-red-fg">12/02/2019 04:30:04 - INFO - root -   lr after epoch 8: 1.024e-05</span>
+<span class="ansi-red-fg">12/02/2019 04:30:04 - INFO - root -   train_loss after epoch 8: 0.12809041421860456</span>
+<span class="ansi-red-fg">12/02/2019 04:30:04 - INFO - root -   
 </span>
-<span class="ansi-red-fg">11/28/2019 16:43:10 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/28/2019 16:43:10 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/28/2019 16:43:10 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/28/2019 16:43:12 - INFO - root -   eval_loss after epoch 9: 0.09822882525622845: </span>
-<span class="ansi-red-fg">11/28/2019 16:43:12 - INFO - root -   eval_accuracy_thresh after epoch 9: 0.9721666574478149: </span>
-<span class="ansi-red-fg">11/28/2019 16:43:12 - INFO - root -   eval_roc_auc after epoch 9: 0.9415366548427313: </span>
-<span class="ansi-red-fg">11/28/2019 16:43:12 - INFO - root -   eval_fbeta after epoch 9: 0.04158548265695572: </span>
-<span class="ansi-red-fg">11/28/2019 16:43:12 - INFO - root -   lr after epoch 9: 1.152e-05</span>
-<span class="ansi-red-fg">11/28/2019 16:43:12 - INFO - root -   train_loss after epoch 9: 0.09968294110149145</span>
-<span class="ansi-red-fg">11/28/2019 16:43:12 - INFO - root -   
+<span class="ansi-red-fg">12/02/2019 04:30:11 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">12/02/2019 04:30:11 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">12/02/2019 04:30:11 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">12/02/2019 04:30:13 - INFO - root -   eval_loss after epoch 9: 0.10016841627657413: </span>
+<span class="ansi-red-fg">12/02/2019 04:30:13 - INFO - root -   eval_accuracy_thresh after epoch 9: 0.9731666445732117: </span>
+<span class="ansi-red-fg">12/02/2019 04:30:13 - INFO - root -   eval_roc_auc after epoch 9: 0.9570898258832248: </span>
+<span class="ansi-red-fg">12/02/2019 04:30:13 - INFO - root -   eval_fbeta after epoch 9: 0.053206492215394974: </span>
+<span class="ansi-red-fg">12/02/2019 04:30:13 - INFO - root -   lr after epoch 9: 1.152e-05</span>
+<span class="ansi-red-fg">12/02/2019 04:30:13 - INFO - root -   train_loss after epoch 9: 0.10213422868400812</span>
+<span class="ansi-red-fg">12/02/2019 04:30:13 - INFO - root -   
 </span>
+<span class="ansi-red-fg">12/02/2019 04:30:20 - INFO - root -   Running evaluation</span>
+<span class="ansi-red-fg">12/02/2019 04:30:20 - INFO - root -     Num examples = 1000</span>
+<span class="ansi-red-fg">12/02/2019 04:30:20 - INFO - root -     Batch size = 128</span>
+<span class="ansi-red-fg">12/02/2019 04:30:22 - INFO - root -   eval_loss after epoch 10: 0.08754858374595642: </span>
+<span class="ansi-red-fg">12/02/2019 04:30:22 - INFO - root -   eval_accuracy_thresh after epoch 10: 0.9716666340827942: </span>
+<span class="ansi-red-fg">12/02/2019 04:30:22 - INFO - root -   eval_roc_auc after epoch 10: 0.9600671995800508: </span>
+<span class="ansi-red-fg">12/02/2019 04:30:22 - INFO - root -   eval_fbeta after epoch 10: 0.050695955753326416: </span>
+<span class="ansi-red-fg">12/02/2019 04:30:22 - INFO - root -   lr after epoch 10: 1.2800000000000001e-05</span>
+<span class="ansi-red-fg">12/02/2019 04:30:22 - INFO - root -   train_loss after epoch 10: 0.08247741986997426</span>
+<span class="ansi-red-fg">12/02/2019 04:30:22 - INFO - root -   
+</span>
+<span class="ansi-red-fg">12/02/2019 04:30:22 - INFO - transformers.configuration_utils -   Configuration saved in /opt/ml/model/model_out/config.json</span>
+<span class="ansi-red-fg">12/02/2019 04:30:23 - INFO - transformers.modeling_utils -   Model weights saved in /opt/ml/model/model_out/pytorch_model.bin</span>
 
-2019-11-28 16:43:27 Uploading - Uploading generated training model<span class="ansi-red-fg">11/28/2019 16:43:19 - INFO - root -   Running evaluation</span>
-<span class="ansi-red-fg">11/28/2019 16:43:19 - INFO - root -     Num examples = 1000</span>
-<span class="ansi-red-fg">11/28/2019 16:43:19 - INFO - root -     Batch size = 128</span>
-<span class="ansi-red-fg">11/28/2019 16:43:21 - INFO - root -   eval_loss after epoch 10: 0.09198387805372477: </span>
-<span class="ansi-red-fg">11/28/2019 16:43:21 - INFO - root -   eval_accuracy_thresh after epoch 10: 0.9708333015441895: </span>
-<span class="ansi-red-fg">11/28/2019 16:43:21 - INFO - root -   eval_roc_auc after epoch 10: 0.9517772571300646: </span>
-<span class="ansi-red-fg">11/28/2019 16:43:21 - INFO - root -   eval_fbeta after epoch 10: 0.04526572674512863: </span>
-<span class="ansi-red-fg">11/28/2019 16:43:21 - INFO - root -   lr after epoch 10: 1.2800000000000001e-05</span>
-<span class="ansi-red-fg">11/28/2019 16:43:21 - INFO - root -   train_loss after epoch 10: 0.08191343606449664</span>
-<span class="ansi-red-fg">11/28/2019 16:43:21 - INFO - root -   
-</span>
-<span class="ansi-red-fg">11/28/2019 16:43:21 - INFO - transformers.configuration_utils -   Configuration saved in /opt/ml/model/model_out/config.json</span>
-<span class="ansi-red-fg">11/28/2019 16:43:22 - INFO - transformers.modeling_utils -   Model weights saved in /opt/ml/model/model_out/pytorch_model.bin</span>
-
-2019-11-28 16:45:12 Completed - Training job completed
-Training seconds: 377
-Billable seconds: 377
+2019-12-02 04:30:25 Uploading - Uploading generated training model
+2019-12-02 04:32:11 Completed - Training job completed
+Training seconds: 426
+Billable seconds: 426
 </pre>
 </div>
 </div>
@@ -13670,13 +13977,23 @@ Billable seconds: 377
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Finally-start-training-our-model">Finally start training our model<a class="anchor-link" href="#Finally-start-training-our-model">&#182;</a></h3><p>Train a model using the input training dataset.
+The API calls the Amazon SageMaker CreateTrainingJob API to start model training. The API uses configuration you provided to create the estimator and the specified input training data to send the CreatingTrainingJob request to Amazon SageMaker.
+This is a synchronous operation. After the model training successfully completes, you can call the deploy() method to host the model using the Amazon SageMaker hosting services.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Deploy-the-model-to-hosting-service">Deploy the model to hosting service<a class="anchor-link" href="#Deploy-the-model-to-hosting-service">&#182;</a></h2>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[14]:</div>
+<div class="prompt input_prompt">In&nbsp;[17]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">predictor</span> <span class="o">=</span> <span class="n">estimator</span><span class="o">.</span><span class="n">deploy</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> 
@@ -13698,8 +14015,19 @@ Billable seconds: 377
     <div class="prompt"></div>
 
 
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>Using already existing model: toxic-comments-2019-12-02-04-23-12-205
+</pre>
+</div>
+</div>
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>--------------------------------------------------------------------------------------------------------------!</pre>
+<pre>--------------------------------------------------------------------------------------------------!</pre>
 </div>
 </div>
 
@@ -13709,7 +14037,7 @@ Billable seconds: 377
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[17]:</div>
+<div class="prompt input_prompt">In&nbsp;[18]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1">### Invoke the Endpoint</span>
@@ -13744,19 +14072,6 @@ Billable seconds: 377
 </div>
 </div>
 
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span> 
-</pre></div>
-
-    </div>
 </div>
 </div>
 
