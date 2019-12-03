@@ -75,6 +75,102 @@ for sentiment analysis. Then we use this model to detect sentiments of each stat
 gradients method to interpret those predictions. 
 
 
+## Steps for launching the workshop environment using EVENT ENGINE
+
+Note: these steps were tested on Safari browser using Mac OS
+
+Open a browser and navigate to https://dashboard.eventengine.run/login
+
+Enter a 12-character "hash" provided to you by workshop organizer.
+
+Click on "Accpet Terms & Login"
+
+![](./img/Step1.png)
+
+Click on "AWS Console"
+
+![](./img/Step2.png)
+
+Please, log off from any other AWS accounts you are currently logged into
+
+Click on "Open AWS Console"
+
+![](./img/Step3.png)
+
+You should see a screen like this.
+
+We now need select the correct Identity Role for the workshop type "IAM" into the search bar and click on IAM.
+
+![](./img/Step4.png)
+
+Click on "Roles"
+
+![](./img/Step5.png)
+
+Scroll down past "Create Role" and Click on "TeamRole".
+
+![](./img/Step6.png)
+
+Copy "Role ARN" by selecting the copy icon on the right.
+
+You may want to temporarily paste this role ARN into a notepad.
+
+Once you copied TeamRole ARN, click on "Services" in the upper left corner.
+
+![](./img/Step7.png)
+
+Enter "SageMaker" in the search bar and click on it
+
+![](./img/Step8.png)
+
+You should see a screen like this.
+
+Click on the orange button "Create Notebook Instance".
+
+![](./img/Step9.png)
+
+On the next webpage,
+- Give your notebook a name (no underscores, please).
+- Under Notebook instance type, select "ml.p2.xlarge".
+- Under "Permission and encryption" select "Enter a custom IAM role ARN".
+- Paste your TeamRole ARN in the cell below labeled "Custom IAM role ARN".
+Note: your TeamRole ARN will have different AWS account number than what you see here.
+- Scroll down to the bottom of the page and click on "Create Notebook instance".
+
+![](./img/Step10.png)
+
+
+
+![](./img/Step11.png)
+
+![](./img/Step12.png)
+
+![](./img/Step13.png)
+
+You should see your notebook being created. In a couple of minutes, its status will change from "Pending" to "In Service", at which point, please click on "Open Jupyter".
+
+![](./img/Step14.png)
+
+In Jupyter Lab console, please, open 'Terminal'.
+
+![](./img/Step15.png)
+
+A new tab will open displaying a command prompt terminal.
+
+In the terminal tap, please, issue these two commands:
+
+$ cd SageMaker
+$ git clone https://github.com/C24IO/Reinvent2019Pytorch.git
+
+You should see output similar to this:
+
+
+![](./img/Step16.png)
+
+You may now navigate to the lab notebooks and get started, best of luck :-) ! 
+
+![](./img/Step17.png)
+
 ## Extras
 
 We have and will continue to add a few extras to this set of labs. *bonus* is a directory that contains some helper scripts. 
