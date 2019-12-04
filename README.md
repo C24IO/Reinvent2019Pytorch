@@ -197,6 +197,7 @@ Also - the folder *impatient* contains the solved labs with outputs.
 * [SageMaker PyTorch Container](https://github.com/aws/sagemaker-pytorch-container) 
 * [SageMaker PyTorch Estimators and Models](https://github.com/aws/sagemaker-python-sdk/tree/f14d86ca3abae405c16daf124e1920018c319683/src/sagemaker/pytorch#pytorch-estimators)
 * [Amazon SageMaker Workshop about Using Custom Algorithms](https://sagemaker-workshop.com/custom.html) 
+* [An ImageNet for language](https://thegradient.pub/nlp-imagenet/)
 
 
 
